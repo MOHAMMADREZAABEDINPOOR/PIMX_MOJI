@@ -1,113 +1,104 @@
-
-
-# PIMX_MOJI 🎨🤖
+# PIMX_MOJI 🎨
 
 [![Persian Description](https://img.shields.io/badge/Read-Persian%20Description-0A66C2?style=for-the-badge)](#persian-description)
 
-PIMX_MOJI is a modern bilingual (EN/FA) image-to-art bot/app that transforms ordinary images into creative visual outputs like ASCII art, Mosaic art, and Emoji art.  
-Built for speed, style, and easy sharing across social media and messaging apps. ⚡
+Modern bilingual (EN/FA) image-to-art generator with **152 styles** for ASCII, Mosaic, and Emoji outputs.
 
-## ✨ Key Features
+## Live Website
 
-- 🖼️ Image to ASCII art conversion
-- 🧩 Image to Mosaic-style conversion
-- 😀 Image to Emoji-art generation
-- 🌗 Bilingual interface (English / Persian)
-- 🎛️ Adjustable generation settings for different styles
-- 📋 Easy output copy for quick sharing
+- https://pimxmoji.pages.dev/
 
-## 🤝 PIMX Ecosystem Bots
+## Features
 
-- **PIMX_MOJI 🎨**  
-  AI-powered creative conversion bot for turning normal images into artistic text/emoji outputs.
+- 152 ready styles/presets
+- Image to ASCII/Mosaic/Emoji conversion
+- Persian + English UI
+- Theme-aware interface (dark/light)
+- Admin analytics panel at `/pimxmojiadmin`
+- 10-minute visit bucketing (multiple refreshes in the same bucket count as 1 visit)
 
-- **PIMX_PASS_DNS 🚀**  
-  Modern bilingual DNS scanner with smart testing, admin analytics dashboard, and Cloudflare D1 backend.
-
-## 🚀 Run Locally
-
-**Prerequisites:** Node.js 18+
+## Run Locally
 
 1. Install dependencies  
    `npm install`
-2. Create `.env.local` and set your API key  
-   `GEMINI_API_KEY=your_api_key_here`
-3. Start development server  
+2. Start dev server  
    `npm run dev`
-4. Open app on  
+3. Open  
    `http://localhost:3000`
 
-## 🛠️ Tech Stack
+## Cloudflare Pages Deploy (Important)
 
-- React + TypeScript
-- Vite
-- Tailwind CSS
-- Google GenAI SDK
-
-## ☁️ Cloudflare Pages Deploy
-
-Use these exact settings to avoid blank white page / MIME errors:
+Use these exact settings to avoid raw-source/MIME issues:
 
 - Framework preset: `Vite`
 - Build command: `npm run build`
 - Build output directory: `dist`
-- Node.js version: `18+` (recommended `20`)
+- Node.js: `20` recommended
 
-If Cloudflare serves `main.tsx` directly, deployment is using source files instead of built files.
+`wrangler.toml` already contains:
+
+- `pages_build_output_dir = "dist"`
+- build command `npm run build`
+
+## Cloudflare D1 Analytics Setup
+
+This project includes server-side analytics API for global stats across users/devices.
+
+Files:
+
+- `functions/api/analytics.js`
+- `cloudflare/d1-schema.sql`
+
+Steps:
+
+1. Create a D1 database in Cloudflare.
+2. Run schema from `cloudflare/d1-schema.sql`.
+3. In Pages project settings, add D1 binding:
+   - Variable: `DB`
+   - Target: your D1 database
+4. Deploy/redeploy the project.
+
+Without D1 binding, frontend falls back to local browser storage for analytics.
 
 ## Persian Description
 
 [![Back to English](https://img.shields.io/badge/US-Back%20to%20English-002654?style=for-the-badge)](#pimx_moji-)
 
-# PIMX_MOJI 🎨🤖
+## PIMX_MOJI 🎨
 
-**PIMX_MOJI** یک بات/اپلیکیشن مدرن و دو‌زبانه (فارسی/انگلیسی) است که تصاویر معمولی را به خروجی‌های هنری مثل ASCII، موزاییکی و ایموجی تبدیل می‌کند.  
-این پروژه برای سرعت بالا، ظاهر حرفه‌ای و اشتراک‌گذاری سریع خروجی‌ها طراحی شده است. ⚡
+یک ابزار دو زبانه (فارسی/انگلیسی) برای تبدیل تصویر به خروجی‌های هنری متنی و ایموجی با **۱۵۲ سبک آماده**.
 
-## ✨ امکانات اصلی
+### لینک سایت
 
-- 🖼️ تبدیل عکس به هنر متنی ASCII
-- 🧩 تبدیل عکس به سبک موزاییکی
-- 😀 تولید هنر ایموجی از تصویر
-- 🌗 رابط کاربری دو زبانه (فارسی / انگلیسی)
-- 🎛️ تنظیمات قابل شخصی‌سازی برای خروجی بهتر
-- 📋 کپی آسان خروجی برای ارسال سریع
+- https://pimxmoji.pages.dev/
 
-## 🤝 بات‌های اکوسیستم PIMX
+### امکانات
 
-- **PIMX_MOJI 🎨**  
-  بات خلاق برای تبدیل تصاویر ساده به خروجی‌های هنری متنی و ایموجی.
+- ۱۵۲ سبک آماده
+- تبدیل تصویر به ASCII / Mosaic / Emoji
+- رابط فارسی و انگلیسی
+- سازگار با تم روشن/تاریک
+- پنل ادمین در مسیر `/pimxmojiadmin`
+- شمارش بازدید با باکت ۱۰ دقیقه‌ای (رفرش‌های متعدد در همان ۱۰ دقیقه = ۱ بازدید)
 
-- **PIMX_PASS_DNS 🚀**  
-  پلتفرم اسکن DNS دو‌زبانه با تست هوشمند، داشبورد تحلیلی ادمین و بک‌اند Cloudflare D1.
+### راه‌اندازی در Cloudflare Pages
 
-## 🚀 اجرای پروژه در لوکال
-
-**پیش‌نیاز:** Node.js نسخه 18 یا بالاتر
-
-1. نصب وابستگی‌ها  
-   `npm install`
-2. ساخت فایل `.env.local` و وارد کردن کلید API  
-   `GEMINI_API_KEY=your_api_key_here`
-3. اجرای پروژه  
-   `npm run dev`
-4. آدرس اجرا  
-   `http://localhost:3000`
-
-## 🛠️ تکنولوژی‌ها
-
-- React + TypeScript
-- Vite
-- Tailwind CSS
-- Google GenAI SDK
-
-## ☁️ دیپلوی روی Cloudflare Pages
-
-برای جلوگیری از صفحه سفید و خطای MIME این تنظیمات را دقیق بگذارید:
+برای جلوگیری از بالا آمدن خام سایت، این تنظیمات را دقیق بگذارید:
 
 - Framework preset: `Vite`
 - Build command: `npm run build`
 - Build output directory: `dist`
-- Node.js: نسخه `18+` (پیشنهادی `20`)
 
-اگر Cloudflare فایل `main.tsx` را مستقیم سرو کند یعنی خروجی Build دیپلوی نشده است.
+### راه‌اندازی آنالیتیکس D1
+
+فایل‌های مربوط:
+
+- `functions/api/analytics.js`
+- `cloudflare/d1-schema.sql`
+
+مراحل:
+
+1. ساخت دیتابیس D1
+2. اجرای اسکیما
+3. اتصال Binding با نام `DB` در Pages
+4. دیپلوی مجدد

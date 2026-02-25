@@ -2,12 +2,19 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Upload, Download, Copy, Settings2, Type, Smile, Hash, 
   SlidersHorizontal, Palette, FileText, Wand2, ZoomIn, ZoomOut, 
-  Maximize, ArrowLeft, Send, Twitter, Smartphone, Music, ShieldCheck, Zap, X, ChevronRight, Sparkles, Check
+  Maximize, Maximize2, ArrowLeft, Send, Twitter, Smartphone, Music, ShieldCheck, Zap, X, ChevronRight, Sparkles, Check,
+  History as HistoryIcon
 } from 'lucide-react';
 import { generateArt, generateText, ArtOptions } from './utils/imageProcessing';
 import { motion, AnimatePresence } from 'motion/react';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import { Navbar } from './components/Navbar';
+import { PRESETS, Preset } from './constants/presets';
+import { PresetPreview } from './components/PresetPreview';
+import { History, HistoryItem } from './components/History';
+import { ZoomModal } from './components/ZoomModal';
+import { CharacterPicker } from './components/CharacterPicker';
+import { trackImageGeneration, trackVisit10MinuteBucket } from './services/analytics';
 
 // --- Components ---
 
@@ -38,6 +45,34 @@ const SocialLink = ({ href, icon: Icon, label, sublabel }: { href: string, icon:
   </a>
 );
 
+const AppLoadingScreen = ({ language }: { language: 'en' | 'fa' }) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 z-[300] flex items-center justify-center bg-white dark:bg-zinc-950 transition-colors duration-300"
+  >
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute top-[-12%] start-[-8%] w-[35%] h-[35%] rounded-full blur-[120px] bg-violet-500/20 dark:bg-violet-500/15" />
+      <div className="absolute bottom-[-12%] end-[-8%] w-[35%] h-[35%] rounded-full blur-[120px] bg-emerald-500/15 dark:bg-emerald-500/10" />
+    </div>
+    <div className="relative flex flex-col items-center gap-5">
+      <div className="relative w-20 h-20">
+        <div className="absolute inset-0 rounded-full border-[6px] border-zinc-200 dark:border-zinc-800" />
+        <div className="absolute inset-0 rounded-full border-[6px] border-transparent border-t-violet-600 dark:border-t-violet-400 animate-spin" />
+      </div>
+      <div className="text-center">
+        <h2 className="text-lg font-black tracking-tight text-zinc-900 dark:text-zinc-100">
+          {language === 'fa' ? 'در حال آماده‌سازی...' : 'Preparing your workspace...'}
+        </h2>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400 mt-1">
+          {language === 'fa' ? 'لطفاً چند لحظه صبر کنید' : 'Please wait a moment'}
+        </p>
+      </div>
+    </div>
+  </motion.div>
+);
+
 // --- Main App Content ---
 
 type View = 'home' | 'setup' | 'result';
@@ -47,9 +82,8 @@ function AppContent() {
   const [view, setView] = useState<View>('home');
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [zoom, setZoom] = useState(1);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const [isAppLoading, setIsAppLoading] = useState(true);
+
   const [options, setOptions] = useState<ArtOptions>({
     mode: 'mosaic',
     chars: 'ART ',
@@ -69,69 +103,271 @@ function AppContent() {
     shadowBlur: 0,
     shadowColor: '#ffffff'
   });
+
+  useEffect(() => {
+    trackVisit10MinuteBucket();
+  }, []);
+
+  // Persistence
+  useEffect(() => {
+    let active = true;
+    const loadSaved = async () => {
+      const savedOptions = localStorage.getItem('pimxmoji_options');
+      if (savedOptions) {
+        try {
+          setOptions(JSON.parse(savedOptions));
+        } catch (e) {
+          console.error("Failed to load saved options");
+        }
+      }
+      
+      // Fallback to default image
+      try {
+        await new Promise<void>((resolve) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            if (active) setImage(img);
+            resolve();
+          };
+          img.onerror = () => resolve();
+          img.src = 'https://i.scdn.co/image/ab6761610000e5eb6a2240e30495392888718e67';
+        });
+      } finally {
+        if (active) setIsAppLoading(false);
+      }
+    };
+    
+    loadSaved();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('pimxmoji_options', JSON.stringify(options));
+  }, [options]);
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   
   const [exportFormat, setExportFormat] = useState<'png' | 'jpeg' | 'webp'>('png');
   const [exportQuality, setExportQuality] = useState<number>(0.9);
+  
+  const [visibleExamples, setVisibleExamples] = useState(10);
+  const [visiblePresets, setVisiblePresets] = useState(20);
+  const [hoveredPreset, setHoveredPreset] = useState<Preset | null>(null);
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [showZoomModal, setShowZoomModal] = useState(false);
+  const [zoomImage, setZoomImage] = useState<string>('');
+  const [showCharPicker, setShowCharPicker] = useState(false);
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [itemToDownload, setItemToDownload] = useState<HistoryItem | null>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const [isRendered, setIsRendered] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const historyRef = useRef<HTMLDivElement>(null);
+  const resultContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const loadHistory = () => {
+      const saved = localStorage.getItem('pimxmoji-history');
+      if (saved) {
+        try {
+          setHistory(JSON.parse(saved));
+        } catch (e) {
+          console.error("Failed to parse history");
+        }
+      }
+    };
+    loadHistory();
+  }, []);
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  const handleApplyHistory = (item: HistoryItem) => {
+    setOptions(item.options);
+    setSelectedPresetId(item.styleId || null);
+    setToast({ message: language === 'fa' ? 'استایل با موفقیت اعمال شد' : 'Style applied successfully!', type: 'success' });
+  };
+
+  const getPresetLabel = (preset: Preset) => {
+    const key = `preset.${preset.id}`;
+    const translated = t(key);
+    return translated === key ? preset.name : translated;
+  };
+
+  const handleDownloadWithFormat = (format: 'png' | 'jpeg' | 'webp') => {
+    setExportFormat(format);
+    setShowDownloadModal(false);
+    
+    setTimeout(() => {
+      if (itemToDownload) {
+        // Download history item
+        const link = document.createElement('a');
+        const ext = format === 'jpeg' ? 'jpg' : format;
+        link.download = `pimxmoji-history-${itemToDownload.id}.${ext}`;
+        
+        // If it's already a data URL, we might need to re-encode if format changed
+        // But history stores it as PNG. For simplicity, if it's history, we just download what's there
+        // or we could draw it to a temp canvas to re-encode.
+        const tempCanvas = document.createElement('canvas');
+        const img = new Image();
+        img.onload = () => {
+          tempCanvas.width = img.width;
+          tempCanvas.height = img.height;
+          const ctx = tempCanvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            link.href = tempCanvas.toDataURL(`image/${format}`, exportQuality);
+            link.click();
+          }
+          setItemToDownload(null);
+        };
+        img.src = itemToDownload.imageData;
+      } else {
+        // Download current canvas
+        handleDownloadImage();
+      }
+    }, 100);
+  };
+
+  useEffect(() => {
+    localStorage.setItem('pimxmoji-history', JSON.stringify(history));
+  }, [history]);
+
+  const [shouldSaveHistory, setShouldSaveHistory] = useState(false);
 
   // Trigger generation whenever view changes to result or options change
   useEffect(() => {
     if (view === 'result' && image) {
-      const controller = new AbortController();
       let isMounted = true;
+      const controller = new AbortController();
 
-      const render = async () => {
-        // Poll for canvas ref availability (max 1 second)
-        let attempts = 0;
-        while (!canvasRef.current && attempts < 20) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-          attempts++;
-        }
-        
-        if (!canvasRef.current) {
-          console.error("Canvas ref not found after polling");
-          if (isMounted) setError("Canvas initialization failed. Please try again.");
-          return;
-        }
+      const generate = async () => {
+        setIsGenerating(true);
+        setError(null);
+        setProgress(0);
+        setIsRendered(false);
+
+        const offscreenCanvas = document.createElement('canvas');
 
         try {
-          if (isMounted) {
-            setIsGenerating(true);
-            setProgress(0);
-            setError(null);
-            await generateArt(image, canvasRef.current, options, (p) => {
-              if (isMounted) setProgress(p);
-            }, controller.signal);
-          }
-        } catch (err: any) {
-          if (err.name === 'AbortError') {
-            console.log('Generation aborted');
-            return;
-          }
-          console.error("Art generation failed:", err);
-          if (isMounted) setError(err.message || "Generation failed. Try reducing resolution.");
-        } finally {
-          if (isMounted && !controller.signal.aborted) {
-            setIsGenerating(false);
-            // Auto fit to screen after generation
-            setTimeout(() => {
+          // Step 1: Perform the intensive art generation on a hidden canvas
+          await generateArt(image, offscreenCanvas, options, (p) => {
+            if (isMounted) setProgress(p);
+          }, controller.signal);
+
+          // Step 2: Convert the result to a Data URL and load it into a new Image object.
+          const dataUrl = offscreenCanvas.toDataURL();
+          const finalImage = new Image();
+
+          // Step 3: Set up the onload handler. This code will only run when the image is 100% ready to be painted instantly.
+          finalImage.onload = () => {
+            const tryDraw = () => {
+              if (!isMounted) return;
               if (canvasRef.current) {
-                const padding = window.innerWidth < 768 ? 32 : 64;
-                const availableWidth = window.innerWidth - padding;
-                const availableHeight = window.innerHeight - 200; // Account for header/footer
-                const scaleX = availableWidth / canvasRef.current.width;
-                const scaleY = availableHeight / canvasRef.current.height;
-                setZoom(Math.min(scaleX, scaleY, 1));
+                const visibleCanvas = canvasRef.current;
+                const ctx = visibleCanvas.getContext('2d');
+                if (ctx) {
+                  visibleCanvas.width = finalImage.width;
+                  visibleCanvas.height = finalImage.height;
+                  // Manually draw the background color onto the canvas itself.
+                  // This makes the background part of the image data and prevents race conditions.
+                  if (options.bgColor !== 'transparent') {
+                    ctx.fillStyle = options.bgColor;
+                    ctx.fillRect(0, 0, visibleCanvas.width, visibleCanvas.height);
+                  }
+                  ctx.drawImage(finalImage, 0, 0);
+                }
+
+                // Step 4: Use requestAnimationFrame to sync the reveal with the browser's next paint cycle for the smoothest possible transition.
+                requestAnimationFrame(() => {
+                  if (isMounted) {
+                    setCanvasSize({ width: visibleCanvas.width, height: visibleCanvas.height });
+                    setIsRendered(true); // This makes the canvas container visible
+                    setIsGenerating(false); // Hide the loading spinner
+
+                    // Auto-fit to screen
+                    setTimeout(() => {
+                      if (isMounted && resultContainerRef.current && visibleCanvas.width > 0) {
+                        const container = resultContainerRef.current;
+                        const scaleX = (container.clientWidth - 64) / visibleCanvas.width;
+                        const scaleY = (container.clientHeight - 64) / visibleCanvas.height;
+                        // Allow upscaling to fill the screen better
+                        setZoom(Math.min(scaleX, scaleY));
+                        
+                        if (shouldSaveHistory) {
+                          const selectedPreset = selectedPresetId ? PRESETS.find((p) => p.id === selectedPresetId) : null;
+                          const newItem: HistoryItem = {
+                            id: Math.random().toString(36).substring(7),
+                            timestamp: Date.now(),
+                            imageData: visibleCanvas.toDataURL('image/png'),
+                            options: { ...options },
+                            styleId: selectedPreset?.id || null,
+                            styleLabel: selectedPreset
+                              ? getPresetLabel(selectedPreset)
+                              : (language === 'fa'
+                                  ? `سفارشی ${options.mode}`
+                                  : `Custom ${options.mode.toUpperCase()}`),
+                          };
+                          setHistory(prev => [newItem, ...prev].slice(0, 50));
+                          trackImageGeneration({
+                            mode: options.mode,
+                            styleKey: selectedPreset?.id || `custom_${options.mode}`,
+                            styleLabel: selectedPreset
+                              ? getPresetLabel(selectedPreset)
+                              : (language === 'fa'
+                                  ? `سفارشی ${options.mode}`
+                                  : `Custom ${options.mode.toUpperCase()}`),
+                          });
+                          setShouldSaveHistory(false);
+                        }
+                      }
+                    }, 100);
+                  }
+                });
+              } else {
+                setTimeout(tryDraw, 50);
               }
-            }, 100);
+            };
+            tryDraw();
+          };
+
+          finalImage.onerror = () => {
+            if (isMounted) {
+              setError("Failed to load the generated image asset.");
+              setIsGenerating(false);
+            }
+          };
+
+          // Step 5: Setting the src triggers the loading process.
+          finalImage.src = dataUrl;
+
+        } catch (err: any) {
+          if (isMounted) {
+            if (err.name !== 'AbortError') {
+              console.error("Art generation failed:", err);
+              setError(err.message || "Generation failed. Try reducing resolution.");
+            }
+            setIsRendered(false);
+            setIsGenerating(false);
           }
         }
       };
-      
-      render();
-      
+
+      generate();
+
       return () => {
         isMounted = false;
         controller.abort();
@@ -162,6 +398,9 @@ function AppContent() {
     }
     setZoom(1);
     setView('result');
+    setCanvasSize({ width: 0, height: 0 });
+    setIsRendered(false);
+    setShouldSaveHistory(true);
   };
 
   const handleDownloadImage = () => {
@@ -216,65 +455,34 @@ function AppContent() {
       defaultChars = '🌑🌒🌓🌔🌕';
       defaultColorize = false;
     }
+    setSelectedPresetId(null);
     setOptions({ ...options, mode, chars: defaultChars, colorize: defaultColorize });
   };
 
-  const applyPreset = (preset: string) => {
-    const base = { ...options, brightness: 100, contrast: 100, saturation: 100, invert: false, colorize: false, resolution: 140, fontFamily: 'monospace', fontWeight: 'bold', threshold: 0, spacing: 1.0, shadowBlur: 0 };
-    switch (preset) {
-      case 'matrix':
-        setOptions({ 
-          ...base, 
-          mode: 'ascii', 
-          chars: '      .:-+=;ﾘｹﾒｶﾀｼﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ', 
-          textColor: '#00ff41', 
-          bgColor: '#000000', 
-          brightness: 110, 
-          contrast: 220, 
-          shadowBlur: 4,
-          shadowColor: '#00ff41',
-          threshold: 40,
-          spacing: 1.2
-        });
-        break;
-      case 'cyberpunk':
-        setOptions({ ...base, mode: 'ascii', chars: '░▒▓█', colorize: true, bgColor: '#05000a', contrast: 170, saturation: 180, shadowBlur: 10, shadowColor: '#ff00ff' });
-        break;
-      case 'blueprint':
-        setOptions({ ...base, mode: 'ascii', chars: ' .|+*#', textColor: '#ffffff', bgColor: '#0a3d91', invert: true, contrast: 130 });
-        break;
-      case 'newspaper':
-        setOptions({ ...base, mode: 'ascii', chars: ' .,:;irsXA253hMHGS#9B&@', textColor: '#111111', bgColor: '#f4f4f0', invert: true, fontFamily: 'serif', contrast: 140, saturation: 0 });
-        break;
-      case 'retro-game':
-        setOptions({ ...base, mode: 'mosaic', chars: '■□', colorize: true, bgColor: '#000000', resolution: 80, contrast: 160 });
-        break;
-      case 'braille':
-        setOptions({ ...base, mode: 'ascii', chars: ' ⠁⠃⠇⡇⣇⣧⣷⣿', colorize: true, bgColor: '#000000' });
-        break;
-      case 'binary':
-        setOptions({ ...base, mode: 'ascii', chars: '01', textColor: '#ffffff', bgColor: '#000000', contrast: 200 });
-        break;
-      case 'hearts':
-        setOptions({ ...base, mode: 'emoji', chars: '🖤🤎❤️🧡💛💚💙💜🤍', bgColor: '#000000' });
-        break;
-      case 'terminal':
-        setOptions({ ...base, mode: 'ascii', chars: ' #_@', textColor: '#00ff00', bgColor: '#000000', fontFamily: 'monospace', contrast: 150 });
-        break;
-      case 'gold':
-        setOptions({ ...base, mode: 'ascii', chars: ' .:+*#%@', textColor: '#ffd700', bgColor: '#1a1a1a', shadowBlur: 8, shadowColor: '#ffd700', contrast: 130 });
-        break;
-      case 'vaporwave':
-        setOptions({ ...base, mode: 'ascii', chars: '░▒▓█', colorize: true, bgColor: '#2d004d', saturation: 200, contrast: 150, shadowBlur: 15, shadowColor: '#00ffff' });
-        break;
-      case 'sketch':
-        setOptions({ ...base, mode: 'ascii', chars: ' /\\|-_', textColor: '#000000', bgColor: '#ffffff', invert: true, contrast: 180, saturation: 0 });
-        break;
+  const applyPreset = (presetId: string) => {
+    const preset = PRESETS.find(p => p.id === presetId);
+    if (preset) {
+      const base = { 
+        ...options, 
+        brightness: 100, 
+        contrast: 100, 
+        saturation: 100, 
+        invert: false, 
+        colorize: false, 
+        resolution: 140, 
+        fontFamily: 'monospace', 
+        fontWeight: 'bold', 
+        threshold: 0, 
+        spacing: 1.0, 
+        shadowBlur: 0 
+      };
+      setOptions({ ...base, ...preset.options });
+      setSelectedPresetId(presetId);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans selection:bg-violet-500/30 overflow-x-hidden transition-colors duration-300">
+    <div dir={language === 'fa' ? 'rtl' : 'ltr'} className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans selection:bg-violet-500/30 overflow-x-hidden transition-colors duration-300">
       <Navbar />
       
       {/* --- Home View --- */}
@@ -334,7 +542,7 @@ function AppContent() {
               </div>
 
               {/* Stats / Trust */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-12 border-t border-zinc-200 dark:border-zinc-900 w-full max-w-4xl">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-12 border-t border-zinc-200 dark:border-zinc-900 w-full max-w-4xl">
                 <div>
                   <div className="text-3xl font-black text-zinc-900 dark:text-white">300+</div>
                   <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold">{t('stats.res')}</div>
@@ -347,10 +555,6 @@ function AppContent() {
                   <div className="text-3xl font-black text-zinc-900 dark:text-white">100%</div>
                   <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold">{t('stats.private')}</div>
                 </div>
-                <div>
-                  <div className="text-3xl font-black text-zinc-900 dark:text-white">∞</div>
-                  <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold">{t('stats.possibilities')}</div>
-                </div>
               </div>
             </div>
 
@@ -360,21 +564,43 @@ function AppContent() {
                 
                 {/* Ecosystem Section */}
                 <div className="space-y-24">
-                  <div className="max-w-4xl space-y-8">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full text-[10px] font-black tracking-widest uppercase">
-                      THE NETWORK
-                    </div>
-                    <h2 className="text-6xl md:text-8xl font-black text-zinc-900 dark:text-white leading-[0.9] tracking-tighter">
-                      {t('ecosystem.title')}
-                    </h2>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                     <div className="space-y-8">
-                      <p className="text-2xl md:text-4xl text-zinc-600 dark:text-zinc-400 leading-tight font-bold">
+                      <div className="inline-flex px-3 py-1 bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 text-[10px] font-black tracking-[0.2em] uppercase rounded-full">
+                        {t('ecosystem.badge')}
+                      </div>
+                      <h2 className="text-4xl sm:text-6xl md:text-8xl font-black text-zinc-900 dark:text-white tracking-tighter leading-tight sm:leading-[0.85] uppercase break-words">
+                        {t('ecosystem.title')}
+                      </h2>
+                      <p className="text-2xl md:text-3xl font-bold text-zinc-500 dark:text-zinc-400 leading-tight tracking-tight">
                         {t('ecosystem.desc')}
                       </p>
-                      <div className="h-px w-24 bg-zinc-900 dark:bg-white/20"></div>
-                      <p className="text-xl text-zinc-500 dark:text-zinc-500 leading-relaxed max-w-3xl font-medium">
+                      <div className="w-24 h-1 bg-zinc-200 dark:bg-zinc-800" />
+                      <p className="text-lg text-zinc-500 dark:text-zinc-500 leading-relaxed font-medium max-w-xl">
                         {t('ecosystem.detailed_desc')}
                       </p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-4 p-8 rounded-[40px] bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800">
+                        <div className="text-4xl font-black text-violet-600 dark:text-violet-500 tracking-tighter">150+</div>
+                        <div className="text-xs font-black text-zinc-400 uppercase tracking-widest">{t('ecosystem.stats.styles.label')}</div>
+                        <p className="text-sm text-zinc-500 font-medium">{t('ecosystem.stats.styles.desc')}</p>
+                      </div>
+                      <div className="space-y-4 p-8 rounded-[40px] bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 sm:mt-8">
+                        <div className="text-4xl font-black text-emerald-600 dark:text-emerald-500 tracking-tighter">100%</div>
+                        <div className="text-xs font-black text-zinc-400 uppercase tracking-widest">{t('ecosystem.stats.private.label')}</div>
+                        <p className="text-sm text-zinc-500 font-medium">{t('ecosystem.stats.private.desc')}</p>
+                      </div>
+                      <div className="space-y-4 p-8 rounded-[40px] bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 sm:-mt-8">
+                        <div className="text-4xl font-black text-blue-600 dark:text-blue-500 tracking-tighter">∞</div>
+                        <div className="text-xs font-black text-zinc-400 uppercase tracking-widest">{t('ecosystem.stats.freedom.label')}</div>
+                        <p className="text-sm text-zinc-500 font-medium">{t('ecosystem.stats.freedom.desc')}</p>
+                      </div>
+                      <div className="space-y-4 p-8 rounded-[40px] bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800">
+                        <div className="text-4xl font-black text-orange-600 dark:text-orange-500 tracking-tighter">24/7</div>
+                        <div className="text-xs font-black text-zinc-400 uppercase tracking-widest">{t('ecosystem.stats.support.label')}</div>
+                        <p className="text-sm text-zinc-500 font-medium">{t('ecosystem.stats.support.desc')}</p>
+                      </div>
                     </div>
                   </div>
 
@@ -415,7 +641,7 @@ function AppContent() {
                               rel="noreferrer"
                               className="flex items-center gap-3 bg-violet-600 dark:bg-violet-500 hover:bg-violet-700 dark:hover:bg-violet-400 text-white dark:text-zinc-950 font-black px-8 py-4 rounded-[20px] transition-all active:scale-95 shadow-xl shadow-violet-500/30 text-base"
                             >
-                              START CONNECTING <ChevronRight className={`w-5 h-5 ${language === 'fa' ? 'rotate-180' : ''}`} />
+                              {t('bot.pass.cta')} <ChevronRight className={`w-5 h-5 ${language === 'fa' ? 'rotate-180' : ''}`} />
                             </a>
                             <a 
                               href="https://t.me/PIMX_PASS" 
@@ -424,7 +650,7 @@ function AppContent() {
                               className="flex items-center gap-3 bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-black px-8 py-4 rounded-[20px] transition-all active:scale-95 text-base border border-zinc-200 dark:border-zinc-800"
                             >
                               <Send className="w-5 h-5" />
-                              CHANNEL
+                              {t('bot.channel')}
                             </a>
                           </div>
                         </div>
@@ -473,7 +699,7 @@ function AppContent() {
                               rel="noreferrer"
                               className="flex items-center gap-3 bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400 text-white dark:text-zinc-950 font-black px-8 py-4 rounded-[20px] transition-all active:scale-95 shadow-xl shadow-emerald-500/30 text-base"
                             >
-                              START DOWNLOADING <ChevronRight className={`w-5 h-5 ${language === 'fa' ? 'rotate-180' : ''}`} />
+                              {t('bot.play.cta')} <ChevronRight className={`w-5 h-5 ${language === 'fa' ? 'rotate-180' : ''}`} />
                             </a>
                           </div>
                         </div>
@@ -522,7 +748,7 @@ function AppContent() {
                               rel="noreferrer"
                               className="flex items-center gap-3 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400 text-white dark:text-zinc-950 font-black px-8 py-4 rounded-[20px] transition-all active:scale-95 shadow-xl shadow-blue-500/30 text-base"
                             >
-                              START STREAMING <ChevronRight className={`w-5 h-5 ${language === 'fa' ? 'rotate-180' : ''}`} />
+                              {t('bot.sonic.cta')} <ChevronRight className={`w-5 h-5 ${language === 'fa' ? 'rotate-180' : ''}`} />
                             </a>
                           </div>
                         </div>
@@ -537,49 +763,104 @@ function AppContent() {
                   </div>
                 </div>
 
-                {/* Documentation / How it works */}
-                <div className="space-y-16 pt-32 border-t border-zinc-200 dark:border-zinc-900">
+                {/* Examples Showcase */}
+                <div className="space-y-16">
                   <div className="max-w-3xl space-y-6">
-                    <div className="text-xs font-black tracking-[0.2em] text-violet-600 dark:text-violet-500 uppercase">
-                      CORE TECHNOLOGY
+                    <div className="text-xs font-black tracking-[0.2em] text-emerald-600 dark:text-emerald-500 uppercase">
+                      VISUAL SHOWCASE
                     </div>
                     <h2 className="text-5xl md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter leading-none">
-                      HOW IT WORKS
+                      {t('examples.title')}
                     </h2>
+                    <p className="text-xl text-zinc-500 dark:text-zinc-500 leading-relaxed max-w-2xl font-medium">
+                      {t('examples.desc')}
+                    </p>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="group p-10 rounded-[40px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-violet-500/50 transition-all duration-500 hover:shadow-2xl hover:shadow-violet-500/10">
-                      <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center text-violet-600 dark:text-violet-400 mb-8 group-hover:scale-110 transition-transform duration-500">
-                        <Type className="w-8 h-8" />
-                      </div>
-                      <div className="text-5xl font-black text-zinc-100 dark:text-zinc-900 mb-4">01</div>
-                      <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-4 tracking-tight">{t('feature.mosaic.title')}</h3>
-                      <p className="text-zinc-500 dark:text-zinc-500 leading-relaxed font-medium">
-                        {t('feature.mosaic.desc')}
-                      </p>
-                    </div>
 
-                    <div className="group p-10 rounded-[40px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/10">
-                      <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-8 group-hover:scale-110 transition-transform duration-500">
-                        <Hash className="w-8 h-8" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {PRESETS.slice(0, visibleExamples).map((item) => (
+                      <div key={item.id} className="group relative overflow-hidden rounded-[32px] aspect-square bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                        <div className="absolute inset-0 transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0 opacity-50 group-hover:opacity-100">
+                          <PresetPreview preset={item} />
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="absolute bottom-6 left-6 right-6 flex flex-col items-start">
+                          <div className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black text-white uppercase tracking-widest mb-2 bg-zinc-900/50 backdrop-blur-md`}>
+                            {item.options.mode}
+                          </div>
+                          <div className="text-xl font-black text-white tracking-tight mb-4">
+                            {item.name}
+                          </div>
+                          <button 
+                            onClick={() => {
+                              applyPreset(item.id);
+                              setView('setup');
+                            }}
+                            className="w-full py-3 bg-white text-zinc-950 rounded-xl font-black text-sm hover:bg-violet-500 hover:text-white transition-colors"
+                          >
+                            {t('examples.use') || 'USE THIS STYLE'}
+                          </button>
+                        </div>
                       </div>
-                      <div className="text-5xl font-black text-zinc-100 dark:text-zinc-900 mb-4">02</div>
-                      <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-4 tracking-tight">{t('feature.ascii.title')}</h3>
-                      <p className="text-zinc-500 dark:text-zinc-500 leading-relaxed font-medium">
-                        {t('feature.ascii.desc')}
-                      </p>
+                    ))}
+                  </div>
+                  {visibleExamples < PRESETS.length && (
+                    <div className="flex justify-center pt-8">
+                      <button 
+                        onClick={() => setVisibleExamples(prev => Math.min(prev + 20, PRESETS.length))}
+                        className="px-8 py-4 bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-900 dark:text-white rounded-2xl font-black text-sm transition-colors border border-zinc-200 dark:border-zinc-800"
+                      >
+                        {t('examples.loadMore') || `LOAD MORE (+${Math.min(20, PRESETS.length - visibleExamples)})`}
+                      </button>
                     </div>
+                  )}
+                </div>
 
-                    <div className="group p-10 rounded-[40px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-blue-500/50 transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10">
-                      <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-8 group-hover:scale-110 transition-transform duration-500">
-                        <Smile className="w-8 h-8" />
+                {/* Documentation / How it works */}
+                <div className="space-y-32 pt-32 border-t border-zinc-200 dark:border-zinc-900">
+                  <div className="space-y-16">
+                    <div className="max-w-3xl space-y-6">
+                      <div className="text-xs font-black tracking-[0.2em] text-violet-600 dark:text-violet-500 uppercase">
+                        {t('howitworks.badge')}
                       </div>
-                      <div className="text-5xl font-black text-zinc-100 dark:text-zinc-900 mb-4">03</div>
-                      <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-4 tracking-tight">{t('feature.emoji.title')}</h3>
-                      <p className="text-zinc-500 dark:text-zinc-500 leading-relaxed font-medium">
-                        {t('feature.emoji.desc')}
-                      </p>
+                      <h2 className="text-5xl md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter leading-none">
+                        {t('howitworks.title')}
+                      </h2>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                      <div className="group p-10 rounded-[40px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-violet-500/50 transition-all duration-500 hover:shadow-2xl hover:shadow-violet-500/10">
+                        <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center text-violet-600 dark:text-violet-400 mb-8 group-hover:scale-110 transition-transform duration-500">
+                          <Type className="w-8 h-8" />
+                        </div>
+                        <div className="text-5xl font-black text-zinc-100 dark:text-zinc-900 mb-4">01</div>
+                        <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-4 tracking-tight">{t('howitworks.mosaic.title')}</h3>
+                        <p className="text-zinc-500 dark:text-zinc-500 leading-relaxed font-medium">
+                          {t('howitworks.mosaic.desc')}
+                        </p>
+                      </div>
+
+                      <div className="group p-10 rounded-[40px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/10">
+                        <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-8 group-hover:scale-110 transition-transform duration-500">
+                          <Hash className="w-8 h-8" />
+                        </div>
+                        <div className="text-5xl font-black text-zinc-100 dark:text-zinc-900 mb-4">02</div>
+                        <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-4 tracking-tight">{t('howitworks.ascii.title')}</h3>
+                        <p className="text-zinc-500 dark:text-zinc-500 leading-relaxed font-medium">
+                          {t('howitworks.ascii.desc')}
+                        </p>
+                      </div>
+
+                      <div className="group p-10 rounded-[40px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-blue-500/50 transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10">
+                        <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-8 group-hover:scale-110 transition-transform duration-500">
+                          <Smile className="w-8 h-8" />
+                        </div>
+                        <div className="text-5xl font-black text-zinc-100 dark:text-zinc-900 mb-4">03</div>
+                        <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-4 tracking-tight">{t('howitworks.emoji.title')}</h3>
+                        <p className="text-zinc-500 dark:text-zinc-500 leading-relaxed font-medium">
+                          {t('howitworks.emoji.desc')}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -631,8 +912,8 @@ function AppContent() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 md:p-12">
-              <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="flex-1 overflow-y-auto p-6 md:p-10">
+              <div className="max-w-[1000px] mx-auto grid grid-cols-1 lg:grid-cols-[0.75fr_1.25fr] gap-10">
                 
                 {/* Left Column: Upload */}
                 <div className="space-y-8">
@@ -643,7 +924,7 @@ function AppContent() {
 
                   <div 
                     onClick={() => fileInputRef.current?.click()}
-                    className={`group border-2 border-dashed rounded-[32px] p-12 flex flex-col items-center justify-center gap-6 cursor-pointer transition-all ${image ? 'border-violet-500/50 bg-violet-500/5' : 'border-zinc-300 dark:border-zinc-800 hover:border-violet-500/50 hover:bg-violet-500/5 bg-white dark:bg-zinc-900/30'}`}
+                    className={`group border-2 border-dashed rounded-[32px] p-6 md:p-8 flex flex-col items-center justify-center gap-4 cursor-pointer transition-all ${image ? 'border-violet-500/50 bg-violet-500/5' : 'border-zinc-300 dark:border-zinc-800 hover:border-violet-500/50 hover:bg-violet-500/5 bg-white dark:bg-zinc-900/30'}`}
                   >
                     {image ? (
                       <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-lg">
@@ -665,6 +946,25 @@ function AppContent() {
                     )}
                     <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
                   </div>
+
+                  {/* History Section (Desktop: Under Step 1) */}
+                  <div ref={historyRef} className="hidden lg:block pt-12 border-t border-zinc-200 dark:border-zinc-800">
+                    <div className="flex items-center justify-between mb-8">
+                      <div>
+                        <h2 className="text-3xl font-black text-zinc-900 dark:text-white mb-2">{t('history.title')}</h2>
+                        <p className="text-zinc-600 dark:text-zinc-500 font-medium">{t('history.desc')}</p>
+                      </div>
+                    </div>
+                    <History 
+                      items={history} 
+                      onDelete={(id) => setHistory(prev => prev.filter(item => item.id !== id))}
+                      onDownload={(item) => {
+                        setItemToDownload(item);
+                        setShowDownloadModal(true);
+                      }}
+                      onApply={handleApplyHistory}
+                    />
+                  </div>
                 </div>
 
                 {/* Right Column: Settings */}
@@ -674,32 +974,58 @@ function AppContent() {
                     <p className="text-zinc-600 dark:text-zinc-500 font-medium">{t('setup.step2.desc')}</p>
                   </div>
 
-                  <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800/50 rounded-[32px] p-8 space-y-2 shadow-sm">
+                  <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800/50 rounded-[32px] p-5 md:p-6 space-y-2 shadow-sm">
                     <Section title={t('section.presets')} icon={Wand2}>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {[
-                          { id: 'matrix', color: 'text-green-500 dark:text-green-400' },
-                          { id: 'cyberpunk', color: 'text-pink-500 dark:text-pink-400' },
-                          { id: 'blueprint', color: 'text-blue-500 dark:text-blue-400' },
-                          { id: 'newspaper', color: 'text-zinc-600 dark:text-zinc-300' },
-                          { id: 'retro-game', color: 'text-orange-500 dark:text-orange-400' },
-                          { id: 'braille', color: 'text-zinc-600 dark:text-zinc-300' },
-                          { id: 'binary', color: 'text-zinc-600 dark:text-zinc-300' },
-                          { id: 'hearts', color: 'text-pink-500 dark:text-pink-400' },
-                          { id: 'terminal', color: 'text-emerald-500 dark:text-emerald-400' },
-                          { id: 'gold', color: 'text-yellow-600 dark:text-yellow-500' },
-                          { id: 'vaporwave', color: 'text-cyan-500 dark:text-cyan-400' },
-                          { id: 'sketch', color: 'text-zinc-500 dark:text-zinc-400' },
-                        ].map((preset) => (
-                          <button 
-                            key={preset.id}
-                            onClick={() => applyPreset(preset.id)} 
-                            className={`bg-zinc-50 dark:bg-zinc-950 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 p-3 rounded-xl text-[10px] font-bold ${preset.color} transition-colors uppercase tracking-wider`}
-                          >
-                            {t(`preset.${preset.id.replace('-game', '')}`)}
-                          </button>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2">
+                        {PRESETS.slice(0, visiblePresets).map((preset) => (
+                          <div key={preset.id} className="relative group">
+                            <button 
+                              onClick={() => applyPreset(preset.id)} 
+                              onMouseEnter={() => setHoveredPreset(preset)}
+                              onMouseLeave={() => setHoveredPreset(null)}
+                              className={`w-full min-h-[56px] flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 hover:bg-zinc-100 dark:hover:bg-zinc-800 border p-1.5 rounded-2xl text-[11px] font-black ${preset.color} transition-all tracking-tight leading-tight ${selectedPresetId === preset.id ? 'border-violet-500 ring-4 ring-violet-500/20 bg-violet-50 dark:bg-violet-500/10 scale-[1.02] shadow-lg shadow-violet-500/10' : 'border-zinc-200 dark:border-zinc-800'}`}
+                            >
+                              <span className="w-full px-1 text-center whitespace-normal break-words">{getPresetLabel(preset)}</span>
+                              {selectedPresetId === preset.id && (
+                                <motion.div 
+                                  layoutId="active-preset"
+                                  className="absolute -top-1 -right-1 w-4 h-4 bg-violet-500 rounded-full flex items-center justify-center text-white shadow-lg"
+                                >
+                                  <Check className="w-2.5 h-2.5" />
+                                </motion.div>
+                              )}
+                            </button>
+                            
+                            {/* Hover Preview Tooltip */}
+                            <AnimatePresence>
+                              {hoveredPreset?.id === preset.id && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl pointer-events-none w-48"
+                                >
+                                  <div className="w-full aspect-square rounded-xl overflow-hidden">
+                                    <PresetPreview preset={preset} userImage={image} />
+                                  </div>
+                                  <div className="text-center mt-2 text-xs font-bold text-zinc-900 dark:text-white">
+                                    {getPresetLabel(preset)}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         ))}
                       </div>
+                      
+                      {visiblePresets < PRESETS.length && (
+                        <button 
+                          onClick={() => setVisiblePresets(PRESETS.length)}
+                          className="w-full mt-4 py-3 bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl text-xs font-black transition-colors border border-zinc-200 dark:border-zinc-800 uppercase tracking-widest"
+                        >
+                          {t('presets.loadMore') || `+${PRESETS.length - visiblePresets} MORE PRESETS`}
+                        </button>
+                      )}
                     </Section>
 
                     <Section title={t('section.mode')} icon={Settings2}>
@@ -719,12 +1045,22 @@ function AppContent() {
                         <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
                           {options.mode === 'mosaic' ? t('label.word') : t('label.chars')}
                         </label>
-                        <input 
-                          type="text" 
-                          value={options.chars}
-                          onChange={(e) => setOptions({ ...options, chars: e.target.value })}
-                          className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all text-zinc-900 dark:text-zinc-200"
-                        />
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            value={options.chars}
+                            onChange={(e) => setOptions({ ...options, chars: e.target.value })}
+                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all text-zinc-900 dark:text-zinc-200 pe-12"
+                          />
+                          {options.mode !== 'mosaic' && (
+                            <button 
+                              onClick={() => setShowCharPicker(true)}
+                              className="absolute end-2 top-1/2 -translate-y-1/2 p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
+                            >
+                              <Smartphone className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </Section>
 
@@ -736,7 +1072,7 @@ function AppContent() {
                             <span className="text-xs text-violet-600 dark:text-violet-400 font-mono font-bold">{options.resolution}</span>
                           </div>
                           <input 
-                            type="range" min="20" max="300" 
+                            type="range" min="20" max="400" 
                             value={options.resolution}
                             onChange={(e) => setOptions({ ...options, resolution: parseInt(e.target.value) })}
                             className="w-full accent-violet-500 h-2 bg-zinc-100 dark:bg-zinc-950 rounded-lg appearance-none cursor-pointer"
@@ -874,24 +1210,63 @@ function AppContent() {
                       </div>
                     </Section>
                   </div>
+
+                  {/* History Section (Mobile: Bottom of Column 2) */}
+                  <div ref={historyRef} className="lg:hidden pt-12 border-t border-zinc-200 dark:border-zinc-800">
+                    <div className="flex items-center justify-between mb-8">
+                      <div>
+                        <h2 className="text-3xl font-black text-zinc-900 dark:text-white mb-2">{t('history.title')}</h2>
+                        <p className="text-zinc-600 dark:text-zinc-500 font-medium">{t('history.desc')}</p>
+                      </div>
+                    </div>
+                    <History 
+                      items={history} 
+                      onDelete={(id) => setHistory(prev => prev.filter(item => item.id !== id))}
+                      onDownload={(item) => {
+                        setItemToDownload(item);
+                        setShowDownloadModal(true);
+                      }}
+                      onApply={handleApplyHistory}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Floating Action Button for Mobile */}
-            <div className="fixed bottom-8 end-8 z-40 lg:hidden">
+            <div className="fixed bottom-8 end-8 z-40 lg:hidden flex flex-col gap-4">
+              <button 
+                onClick={() => historyRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                className="w-16 h-16 rounded-full flex flex-col items-center justify-center bg-zinc-800 text-white shadow-2xl transition-all active:scale-90 border border-zinc-700"
+              >
+                <HistoryIcon className="w-6 h-6 mb-0.5" />
+                <span className="text-[8px] font-black uppercase tracking-tighter opacity-80">
+                  {language === 'fa' ? 'هیستوری' : 'HISTORY'}
+                </span>
+              </button>
               <button 
                 onClick={handleGenerate}
                 disabled={!image}
                 className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-90 ${image ? 'bg-violet-600 dark:bg-violet-500 hover:bg-violet-500 dark:hover:bg-violet-400 text-white dark:text-zinc-950 shadow-violet-500/40' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
               >
                 {isGenerating ? (
-                  <div className="w-6 h-6 border-2 border-zinc-950/20 border-t-zinc-950 rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                 ) : (
                   <Wand2 className="w-8 h-8" />
                 )}
               </button>
             </div>
+
+            {/* Footer */}
+            <footer className="relative z-10 p-12 text-center text-zinc-500 dark:text-zinc-600 text-xs border-t border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950 mt-24">
+              <div className="max-w-4xl mx-auto space-y-4">
+                <div className="flex items-center justify-center gap-6 mb-8">
+                  <a href="https://t.me/PIMX_PASS" className="hover:text-zinc-900 dark:hover:text-white transition-colors font-bold tracking-widest">TELEGRAM</a>
+                  <a href="https://x.com/pimxpass" className="hover:text-zinc-900 dark:hover:text-white transition-colors font-bold tracking-widest">X / TWITTER</a>
+                </div>
+                <p className="font-medium opacity-50">{t('footer.rights')}</p>
+              </div>
+            </footer>
           </motion.div>
         )}
 
@@ -908,96 +1283,130 @@ function AppContent() {
             <div className="p-6 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between z-20">
               <button 
                 onClick={() => setView('setup')}
-                className="flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl text-zinc-600 dark:text-zinc-300 transition-colors font-bold text-sm"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl text-zinc-600 dark:text-zinc-300 transition-colors font-bold text-[10px] md:text-sm"
               >
-                <ArrowLeft className={`w-4 h-4 ${language === 'fa' ? 'rotate-180' : ''}`} />
-                {t('result.back')}
+                <ArrowLeft className={`w-3.5 h-3.5 ${language === 'fa' ? 'rotate-180' : ''}`} />
+                <span className="hidden sm:inline">{t('result.back')}</span>
+                <span className="sm:hidden">{language === 'fa' ? 'بازگشت' : 'BACK'}</span>
               </button>
               <h1 className="text-xl font-black tracking-tighter text-violet-600 dark:text-violet-400 hidden md:block">{t('result.title')}</h1>
               <div className="flex items-center gap-2">
-                <button onClick={() => setZoom(z => Math.min(z + 0.2, 5))} className="p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-zinc-600 dark:text-zinc-300 transition-all"><ZoomIn className="w-5 h-5" /></button>
-                <button onClick={() => setZoom(z => Math.max(z - 0.2, 0.1))} className="p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-zinc-600 dark:text-zinc-300 transition-all"><ZoomOut className="w-5 h-5" /></button>
-                <button onClick={() => setZoom(1)} className="p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-zinc-600 dark:text-zinc-300 transition-all"><Maximize className="w-5 h-5" /></button>
+                <button onClick={() => setZoom(z => Math.min(z + 0.2, 5))} className="p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-zinc-600 dark:text-zinc-300 transition-all" title="Zoom In"><ZoomIn className="w-5 h-5" /></button>
+                <button onClick={() => setZoom(z => Math.max(z - 0.2, 0.1))} className="p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-zinc-600 dark:text-zinc-300 transition-all" title="Zoom Out"><ZoomOut className="w-5 h-5" /></button>
+                <button 
+                  onClick={() => {
+                    if (canvasRef.current && resultContainerRef.current) {
+                      const container = resultContainerRef.current;
+                      const scaleX = (container.clientWidth - 64) / canvasSize.width;
+                      const scaleY = (container.clientHeight - 64) / canvasSize.height;
+                      setZoom(Math.min(scaleX, scaleY));
+                      setTimeout(() => {
+                        container.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                      }, 50);
+                    }
+                  }} 
+                  className="p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-zinc-600 dark:text-zinc-300 transition-all" 
+                  title="Fit to Screen"
+                >
+                  <Maximize className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={() => {
+                    if (canvasRef.current) {
+                      setZoomImage(canvasRef.current.toDataURL('image/png'));
+                      setShowZoomModal(true);
+                    }
+                  }}
+                  className="p-2 bg-violet-600 dark:bg-violet-500 hover:bg-violet-500 dark:hover:bg-violet-400 text-white dark:text-zinc-950 rounded-lg transition-all"
+                  title="Fullscreen Preview"
+                >
+                  <Maximize2 className="w-5 h-5" />
+                </button>
               </div>
             </div>
 
             {/* Canvas Area */}
-            <div className="flex-1 bg-zinc-100 dark:bg-zinc-950 relative overflow-auto custom-scrollbar flex items-center justify-center p-4 md:p-8">
-              <div className="absolute inset-0 opacity-5 pointer-events-none" 
-                   style={{ backgroundImage: 'radial-gradient(#888 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-              
-              {isGenerating && (
-                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md">
-                  <div className="relative w-32 h-32 mb-8">
-                    <div className="absolute inset-0 border-8 border-violet-500/10 rounded-full" />
-                    <svg className="absolute inset-0 w-full h-full -rotate-90">
-                      <circle 
-                        cx="64" cy="64" r="56" 
-                        fill="none" stroke="currentColor" strokeWidth="8"
-                        className="text-violet-500 transition-all duration-500 ease-out"
-                        strokeDasharray={351.8}
-                        strokeDashoffset={351.8 - (351.8 * progress) / 100}
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-2xl font-black text-zinc-900 dark:text-white">{progress}%</span>
-                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-tighter">Processing</span>
+            <div ref={resultContainerRef} className="flex-1 bg-zinc-100 dark:bg-zinc-950 relative overflow-auto custom-scrollbar">
+              <div className="min-h-full min-w-full flex items-center justify-center p-4 md:p-12">
+                <div className="absolute inset-0 opacity-5 pointer-events-none" 
+                     style={{ backgroundImage: 'radial-gradient(#888 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+                
+                {isGenerating && (
+                  <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl">
+                    <div className="relative w-40 h-40 mb-10">
+                      <div className="absolute inset-0 border-8 border-violet-500/5 dark:border-violet-500/10 rounded-full" />
+                      <svg className="absolute inset-0 w-full h-full -rotate-90 filter drop-shadow-[0_0_8px_rgba(139,92,246,0.3)]">
+                        <circle 
+                          cx="80" cy="80" r="72" 
+                          fill="none" stroke="currentColor" strokeWidth="8"
+                          className="text-violet-600 dark:text-violet-500 transition-all duration-500 ease-out"
+                          strokeDasharray={452.4}
+                          strokeDashoffset={452.4 - (452.4 * progress) / 100}
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter">{progress}%</span>
+                        <span className="text-[10px] font-black text-violet-600 dark:text-violet-400 uppercase tracking-widest animate-pulse">
+                          {language === 'fa' ? 'در حال پردازش' : 'PROCESSING'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-center space-y-3 px-6">
+                      <p className="text-3xl md:text-4xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase leading-none">
+                        {t('result.generating.title')}
+                      </p>
+                      <p className="text-base text-zinc-500 dark:text-zinc-400 font-medium max-w-xs mx-auto leading-relaxed">
+                        {t('result.generating.desc')}
+                      </p>
                     </div>
                   </div>
-                  <div className="text-center space-y-2">
-                    <p className="text-2xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase">{t('result.generating.title')}</p>
-                    <p className="text-sm text-zinc-500 font-medium max-w-xs mx-auto">{t('result.generating.desc')}</p>
-                  </div>
-                </div>
-              )}
+                )}
 
-              {error && (
-                <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl p-6 text-center">
-                  <div className="w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center text-red-500 mb-6">
-                    <X className="w-10 h-10" />
+                {error && (
+                  <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl p-6 text-center">
+                    <div className="w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center text-red-500 mb-6">
+                      <X className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-2 uppercase">{t('result.failed.title')}</h3>
+                    <p className="text-zinc-500 dark:text-zinc-400 mb-8 max-w-sm">{error}</p>
+                    <button 
+                      onClick={() => setView('setup')}
+                      className="px-8 py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 font-black rounded-2xl hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
+                    >
+                      {t('result.failed.back')}
+                    </button>
                   </div>
-                  <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-2 uppercase">{t('result.failed.title')}</h3>
-                  <p className="text-zinc-500 dark:text-zinc-400 mb-8 max-w-sm">{error}</p>
-                  <button 
-                    onClick={() => setView('setup')}
-                    className="px-8 py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 font-black rounded-2xl hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
-                  >
-                    {t('result.failed.back')}
-                  </button>
-                </div>
-              )}
+                )}
 
-              <motion.div 
-                animate={{ scale: zoom, opacity: isGenerating ? 0.3 : 1 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="relative origin-center"
-              >
-                <canvas 
-                  ref={canvasRef} 
-                  className="shadow-2xl rounded-sm border border-zinc-200 dark:border-zinc-800/50 transition-all"
-                  style={{ backgroundColor: options.bgColor === 'transparent' ? 'transparent' : options.bgColor }}
-                />
-              </motion.div>
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: isRendered ? 1 : 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="relative origin-center"
+                  style={{ display: isRendered ? 'block' : 'none' }}
+                >
+                  <canvas 
+                    ref={canvasRef} 
+                    className="shadow-2xl rounded-sm border border-zinc-200 dark:border-zinc-800/50 transition-all duration-200 ease-out"
+                    style={{ 
+                      backgroundColor: options.bgColor === 'transparent' ? 'transparent' : options.bgColor,
+                      width: canvasSize.width ? `${canvasSize.width * zoom}px` : 'auto',
+                      height: canvasSize.height ? `${canvasSize.height * zoom}px` : 'auto'
+                    }}
+                  />
+                </motion.div>
+              </div>
             </div>
 
             {/* Bottom Actions */}
             <div className="p-6 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row items-center justify-center gap-4 z-20">
-              <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-950 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                <select 
-                  value={exportFormat}
-                  onChange={(e) => setExportFormat(e.target.value as any)}
-                  className="bg-transparent border-0 text-xs font-bold text-zinc-600 dark:text-zinc-400 focus:ring-0 px-3 cursor-pointer"
-                >
-                  <option value="png">PNG</option>
-                  <option value="jpeg">JPEG</option>
-                  <option value="webp">WEBP</option>
-                </select>
+              <div className="flex items-center gap-2">
                 <button 
-                  onClick={handleDownloadImage}
-                  className="flex items-center gap-2 bg-violet-600 dark:bg-violet-500 hover:bg-violet-500 dark:hover:bg-violet-400 text-white dark:text-zinc-950 font-black px-6 py-3 rounded-lg transition-all active:scale-95"
+                  onClick={() => setShowDownloadModal(true)}
+                  className="flex items-center gap-2 bg-violet-600 dark:bg-violet-500 hover:bg-violet-500 dark:hover:bg-violet-400 text-white dark:text-zinc-950 font-black px-8 py-4 rounded-2xl transition-all active:scale-95 shadow-xl shadow-violet-500/20"
                 >
-                  <Download className="w-4 h-4" />
+                  <Download className="w-5 h-4" />
                   {t('action.download')}
                 </button>
               </div>
@@ -1019,6 +1428,90 @@ function AppContent() {
               </div>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <ZoomModal 
+        isOpen={showZoomModal} 
+        onClose={() => setShowZoomModal(false)} 
+        imageSrc={zoomImage}
+        onDownload={() => {
+          setItemToDownload(null);
+          setShowDownloadModal(true);
+        }}
+      />
+
+      <CharacterPicker
+        isOpen={showCharPicker}
+        onClose={() => setShowCharPicker(false)}
+        mode={options.mode === 'emoji' ? 'emoji' : 'ascii'}
+        onSelect={(char) => setOptions({ ...options, chars: char })}
+      />
+
+      {/* Download Modal */}
+      <AnimatePresence>
+        {showDownloadModal && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDownloadModal(false)}
+              className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-[32px] shadow-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 p-8"
+            >
+              <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-6 uppercase tracking-tight text-center">
+                {language === 'fa' ? 'انتخاب فرمت دانلود' : 'Select Format'}
+              </h3>
+              <div className="grid grid-cols-1 gap-3">
+                {(['png', 'jpg', 'webp'] as const).map((format) => (
+                  <button
+                    key={format}
+                    onClick={() => handleDownloadWithFormat(format === 'jpg' ? 'jpeg' : format)}
+                    className="w-full py-4 bg-zinc-100 dark:bg-zinc-800 hover:bg-violet-500 hover:text-white rounded-2xl font-black text-sm transition-all uppercase tracking-widest"
+                  >
+                    {format.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <button 
+                onClick={() => setShowDownloadModal(false)}
+                className="w-full mt-6 text-zinc-500 font-bold text-xs uppercase tracking-widest hover:text-zinc-900 dark:hover:text-white transition-colors"
+              >
+                {language === 'fa' ? 'انصراف' : 'Cancel'}
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 50, x: '-50%' }}
+            className={`fixed bottom-24 left-1/2 z-[200] px-6 py-3 rounded-full shadow-2xl font-black text-sm uppercase tracking-widest flex items-center gap-3 border ${
+              toast.type === 'success' 
+                ? 'bg-emerald-500 text-white border-emerald-400' 
+                : 'bg-red-500 text-white border-red-400'
+            }`}
+          >
+            {toast.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+            {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isAppLoading && (
+          <AppLoadingScreen language={language} />
         )}
       </AnimatePresence>
     </div>

@@ -44,7 +44,7 @@ export async function generateArt(
   const spacing = options.spacing || 1.0;
   
   // Better measurement for emojis and multi-byte characters
-  const hasEmoji = /[\u{1F300}-\u{1F9FF}]/u.test(options.chars);
+  const hasEmoji = options.mode === 'emoji' || /[\u{1F300}-\u{1F9FF}]/u.test(options.chars);
   const measureChar = hasEmoji ? '😀' : 'M';
   const charWidth = (ctx.measureText(measureChar).width || (fontSize * 0.6)) * spacing;
   const charHeight = fontSize * spacing;
@@ -92,6 +92,7 @@ export async function generateArt(
 
   const charArray = Array.from(options.chars);
   if (charArray.length === 0) charArray.push(' ');
+  if (charArray.length === 1 && options.mode !== 'mosaic') charArray.push(' ');
 
   // Cache state to avoid redundant context updates
   let currentFont = '';
@@ -99,7 +100,7 @@ export async function generateArt(
   let currentShadowBlur = -1;
 
   const baseFont = `${options.fontWeight} ${fontSize}px ${options.fontFamily}`;
-  const emojiFont = `${fontSize}px sans-serif`;
+  const emojiFont = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif`;
 
   // Chunked rendering to keep UI responsive
   const CHUNK_SIZE = 10; // Increased chunk size slightly for better throughput
@@ -212,6 +213,7 @@ export function generateText(
 
   const charArray = Array.from(options.chars);
   if (charArray.length === 0) charArray.push(' ');
+  if (charArray.length === 1 && options.mode !== 'mosaic') charArray.push(' ');
 
   let result = '';
   let charIndex = 0;
