@@ -105,16 +105,21 @@ function AppContent() {
   });
 
   useEffect(() => {
+    const tickVisit = () => {
+      if (document.visibilityState !== 'visible') return;
+      trackVisit10MinuteBucket();
+    };
+
     // Count first visit immediately, then keep checking while user stays on the site.
-    trackVisit10MinuteBucket();
+    tickVisit();
 
     const intervalId = window.setInterval(() => {
-      trackVisit10MinuteBucket();
+      tickVisit();
     }, 60 * 1000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        trackVisit10MinuteBucket();
+        tickVisit();
       }
     };
 

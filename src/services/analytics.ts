@@ -39,7 +39,7 @@ export type AnalyticsSummary = {
 };
 
 const CLIENT_ID_KEY = 'pimxmoji_client_id';
-const LAST_VISIT_BUCKET_KEY = 'pimxmoji_last_visit_bucket';
+const LAST_VISIT_TS_KEY = 'pimxmoji_last_visit_ts';
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 const API_ENDPOINT = '/api/analytics';
 
@@ -79,15 +79,16 @@ async function sendEvent(event: AnalyticsEvent) {
 
 export function trackVisit10MinuteBucket() {
   if (typeof window === 'undefined') return false;
-  const now = Date.now();
-  const bucketStart = Math.floor(now / TEN_MINUTES_MS) * TEN_MINUTES_MS;
-  const lastBucket = localStorage.getItem(LAST_VISIT_BUCKET_KEY);
-  if (lastBucket && Number(lastBucket) === bucketStart) return false;
+  const timestamp = Date.now();
+  const lastVisitRaw = localStorage.getItem(LAST_VISIT_TS_KEY);
+  const lastVisit = lastVisitRaw ? Number(lastVisitRaw) : 0;
+  if (Number.isFinite(lastVisit) && timestamp - lastVisit < TEN_MINUTES_MS) return false;
 
-  localStorage.setItem(LAST_VISIT_BUCKET_KEY, String(bucketStart));
+  localStorage.setItem(LAST_VISIT_TS_KEY, String(timestamp));
+  const bucketStart = Math.floor(timestamp / TEN_MINUTES_MS) * TEN_MINUTES_MS;
   void sendEvent({
     type: 'visit',
-    timestamp: now,
+    timestamp,
     bucketStart,
     clientId: getClientId(),
     device: detectDeviceType(),
