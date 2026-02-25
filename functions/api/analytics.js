@@ -18,9 +18,19 @@ function json(data, status = 200) {
   });
 }
 
+function serverError(message, details) {
+  return json({ error: message, details }, 500);
+}
+
+function resolveDbBinding(env) {
+  if (!env || typeof env !== 'object') return null;
+  if (env.DB && typeof env.DB.prepare === 'function') return env.DB;
+  return null;
+}
+
 async function ensureSchema(db) {
-  await db.batch([
-    db.prepare(
+  await db
+    .prepare(
       `CREATE TABLE IF NOT EXISTS analytics_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         type TEXT NOT NULL,
@@ -32,10 +42,10 @@ async function ensureSchema(db) {
         style_key TEXT,
         style_label TEXT
       )`
-    ),
-    db.prepare(`CREATE INDEX IF NOT EXISTS idx_analytics_events_timestamp ON analytics_events(timestamp)`),
-    db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_analytics_visit_dedupe ON analytics_events(type, bucket_start, client_id)`),
-  ]);
+    )
+    .run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_analytics_events_timestamp ON analytics_events(timestamp)`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_analytics_visit_lookup ON analytics_events(type, bucket_start, client_id)`).run();
 }
 
 function getBucketLabel(ts, intervalMs) {
@@ -72,10 +82,21 @@ function buildTrend(events, rangeStart, rangeEnd, intervalMs, type) {
 }
 
 async function handleGet(request, env) {
-  if (!env.DB) {
-    return json({ error: 'D1 binding "DB" is missing.' }, 500);
+  const db = resolveDbBinding(env);
+  if (!db) {
+    return json(
+      {
+        error: 'D1 binding "DB" is missing.',
+        envKeys: Object.keys(env || {}),
+      },
+      500
+    );
   }
-  await ensureSchema(env.DB);
+  try {
+    await ensureSchema(db);
+  } catch (error) {
+    return serverError('Failed to ensure analytics schema', error instanceof Error ? error.message : String(error));
+  }
   const url = new URL(request.url);
   const rangeMsRaw = Number(url.searchParams.get('rangeMs') || DEFAULT_RANGE_MS);
   const rangeMs = Math.max(60 * 1000, Math.min(MAX_RANGE_MS, Number.isFinite(rangeMsRaw) ? rangeMsRaw : DEFAULT_RANGE_MS));
@@ -84,7 +105,7 @@ async function handleGet(request, env) {
 
   let results = [];
   try {
-    const queryResult = await env.DB.prepare(
+    const queryResult = await db.prepare(
       `SELECT type, timestamp, device, mode, style_key, style_label
        FROM analytics_events
        WHERE timestamp BETWEEN ?1 AND ?2`
@@ -93,13 +114,7 @@ async function handleGet(request, env) {
       .all();
     results = queryResult.results || [];
   } catch (error) {
-    return json(
-      {
-        error: 'Failed to read analytics data',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      500
-    );
+    return serverError('Failed to read analytics data', error instanceof Error ? error.message : String(error));
   }
 
   const events = (results || []).map((r) => ({
@@ -149,10 +164,21 @@ async function handleGet(request, env) {
 }
 
 async function handlePost(request, env) {
-  if (!env.DB) {
-    return json({ error: 'D1 binding "DB" is missing.' }, 500);
+  const db = resolveDbBinding(env);
+  if (!db) {
+    return json(
+      {
+        error: 'D1 binding "DB" is missing.',
+        envKeys: Object.keys(env || {}),
+      },
+      500
+    );
   }
-  await ensureSchema(env.DB);
+  try {
+    await ensureSchema(db);
+  } catch (error) {
+    return serverError('Failed to ensure analytics schema', error instanceof Error ? error.message : String(error));
+  }
   let body;
   try {
     body = await request.json();
@@ -167,13 +193,28 @@ async function handlePost(request, env) {
 
   if (type === 'visit') {
     const bucketStart = Number(body?.bucketStart || timestamp);
-    await env.DB.prepare(
-      `INSERT OR IGNORE INTO analytics_events
-        (type, timestamp, bucket_start, client_id, device, mode, style_key, style_label)
-       VALUES ('visit', ?1, ?2, ?3, ?4, NULL, NULL, NULL)`
-    )
-      .bind(timestamp, bucketStart, clientId, device)
-      .run();
+    try {
+      const existingVisit = await db
+        .prepare(
+          `SELECT id FROM analytics_events
+           WHERE type = 'visit' AND bucket_start = ?1 AND client_id = ?2
+           LIMIT 1`
+        )
+        .bind(bucketStart, clientId)
+        .first();
+      if (!existingVisit) {
+        await db
+          .prepare(
+            `INSERT INTO analytics_events
+              (type, timestamp, bucket_start, client_id, device, mode, style_key, style_label)
+             VALUES ('visit', ?1, ?2, ?3, ?4, NULL, NULL, NULL)`
+          )
+          .bind(timestamp, bucketStart, clientId, device)
+          .run();
+      }
+    } catch (error) {
+      return serverError('Failed to write visit event', error instanceof Error ? error.message : String(error));
+    }
     return json({ ok: true });
   }
 
@@ -181,13 +222,18 @@ async function handlePost(request, env) {
     const mode = MODE_VALUES.has(body?.mode) ? body.mode : 'mosaic';
     const styleKey = String(body?.styleKey || mode);
     const styleLabel = String(body?.styleLabel || mode.toUpperCase());
-    await env.DB.prepare(
-      `INSERT INTO analytics_events
-        (type, timestamp, bucket_start, client_id, device, mode, style_key, style_label)
-       VALUES ('generation', ?1, NULL, ?2, ?3, ?4, ?5, ?6)`
-    )
-      .bind(timestamp, clientId, device, mode, styleKey, styleLabel)
-      .run();
+    try {
+      await db
+        .prepare(
+          `INSERT INTO analytics_events
+            (type, timestamp, bucket_start, client_id, device, mode, style_key, style_label)
+           VALUES ('generation', ?1, NULL, ?2, ?3, ?4, ?5, ?6)`
+        )
+        .bind(timestamp, clientId, device, mode, styleKey, styleLabel)
+        .run();
+    } catch (error) {
+      return serverError('Failed to write generation event', error instanceof Error ? error.message : String(error));
+    }
     return json({ ok: true });
   }
 
