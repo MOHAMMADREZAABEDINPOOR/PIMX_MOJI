@@ -105,7 +105,25 @@ function AppContent() {
   });
 
   useEffect(() => {
+    // Count first visit immediately, then keep checking while user stays on the site.
     trackVisit10MinuteBucket();
+
+    const intervalId = window.setInterval(() => {
+      trackVisit10MinuteBucket();
+    }, 60 * 1000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        trackVisit10MinuteBucket();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   // Persistence
