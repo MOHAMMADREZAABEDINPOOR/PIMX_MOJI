@@ -124,12 +124,19 @@ function emptySummary(): AnalyticsSummary {
 }
 
 export async function getAnalyticsSummary(rangeMs: number): Promise<AnalyticsSummary> {
-  try {
-    const res = await fetch(`${API_ENDPOINT}?rangeMs=${encodeURIComponent(rangeMs)}`);
-    if (!res.ok) return emptySummary();
-    const data = (await res.json()) as AnalyticsSummary;
-    return data || emptySummary();
-  } catch {
-    return emptySummary();
+  const res = await fetch(`${API_ENDPOINT}?rangeMs=${encodeURIComponent(rangeMs)}`);
+  if (!res.ok) {
+    let details = `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body?.error) {
+        details = body.details ? `${body.error}: ${body.details}` : body.error;
+      }
+    } catch {
+      // keep default details
+    }
+    throw new Error(details);
   }
+  const data = (await res.json()) as AnalyticsSummary;
+  return data || emptySummary();
 }

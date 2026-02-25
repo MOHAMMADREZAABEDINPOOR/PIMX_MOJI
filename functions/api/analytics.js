@@ -18,6 +18,26 @@ function json(data, status = 200) {
   });
 }
 
+async function ensureSchema(db) {
+  await db.batch([
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS analytics_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL,
+        timestamp INTEGER NOT NULL,
+        bucket_start INTEGER,
+        client_id TEXT,
+        device TEXT,
+        mode TEXT,
+        style_key TEXT,
+        style_label TEXT
+      )`
+    ),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_analytics_events_timestamp ON analytics_events(timestamp)`),
+    db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_analytics_visit_dedupe ON analytics_events(type, bucket_start, client_id)`),
+  ]);
+}
+
 function getBucketLabel(ts, intervalMs) {
   const d = new Date(ts);
   const hh = `${d.getUTCHours()}`.padStart(2, '0');
@@ -55,19 +75,32 @@ async function handleGet(request, env) {
   if (!env.DB) {
     return json({ error: 'D1 binding "DB" is missing.' }, 500);
   }
+  await ensureSchema(env.DB);
   const url = new URL(request.url);
   const rangeMsRaw = Number(url.searchParams.get('rangeMs') || DEFAULT_RANGE_MS);
   const rangeMs = Math.max(60 * 1000, Math.min(MAX_RANGE_MS, Number.isFinite(rangeMsRaw) ? rangeMsRaw : DEFAULT_RANGE_MS));
   const end = Date.now();
   const start = end - rangeMs;
 
-  const { results } = await env.DB.prepare(
-    `SELECT type, timestamp, device, mode, style_key, style_label
-     FROM analytics_events
-     WHERE timestamp BETWEEN ?1 AND ?2`
-  )
-    .bind(start, end)
-    .all();
+  let results = [];
+  try {
+    const queryResult = await env.DB.prepare(
+      `SELECT type, timestamp, device, mode, style_key, style_label
+       FROM analytics_events
+       WHERE timestamp BETWEEN ?1 AND ?2`
+    )
+      .bind(start, end)
+      .all();
+    results = queryResult.results || [];
+  } catch (error) {
+    return json(
+      {
+        error: 'Failed to read analytics data',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      500
+    );
+  }
 
   const events = (results || []).map((r) => ({
     type: r.type,
@@ -119,6 +152,7 @@ async function handlePost(request, env) {
   if (!env.DB) {
     return json({ error: 'D1 binding "DB" is missing.' }, 500);
   }
+  await ensureSchema(env.DB);
   let body;
   try {
     body = await request.json();

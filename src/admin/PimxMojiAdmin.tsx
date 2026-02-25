@@ -174,6 +174,7 @@ export function PimxMojiAdmin() {
   const [authed, setAuthed] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [refreshTick, setRefreshTick] = useState(0);
+  const [loadError, setLoadError] = useState('');
   const [summary, setSummary] = useState<AnalyticsSummary>({
     visits: 0,
     imagesCreated: 0,
@@ -197,8 +198,17 @@ export function PimxMojiAdmin() {
   useEffect(() => {
     let active = true;
     const load = async () => {
-      const data = await getAnalyticsSummary(rangeMs);
-      if (active) setSummary(data);
+      try {
+        const data = await getAnalyticsSummary(rangeMs);
+        if (active) {
+          setSummary(data);
+          setLoadError('');
+        }
+      } catch (error) {
+        if (active) {
+          setLoadError(error instanceof Error ? error.message : 'Failed to load analytics');
+        }
+      }
     };
     void load();
     return () => {
@@ -288,6 +298,12 @@ export function PimxMojiAdmin() {
           <MetricCard title="ASCII Created" value={summary.modeCounts.ascii} />
           <MetricCard title="Emoji Created" value={summary.modeCounts.emoji} />
         </div>
+
+        {loadError && (
+          <div className="rounded-2xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-300">
+            API Error: {loadError}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <LineChart title="Visits Trend" series={summary.visitsTrend} />
