@@ -1,3 +1,7 @@
-name = "pimx-moji"
+﻿name = "pimx-moji"
 compatibility_date = "2026-02-23"
 pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_id = "5b700362-331e-431e-9b3e-82d39c2da1db"
