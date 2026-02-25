@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Block admin route from indexing
+Disallow: /pimxmojiadmin
+
+Sitemap: https://pimxmoji.pages.dev/sitemap.xml
+
