@@ -17,6 +17,43 @@ import { CharacterPicker } from './components/CharacterPicker';
 import { trackImageGeneration, trackVisit10MinuteBucket } from './services/analytics';
 
 // --- Components ---
+const HISTORY_STORAGE_KEY = 'pimxmoji-history';
+const MAX_HISTORY_ITEMS = 20;
+const DEFAULT_IMAGE_DATA_URL =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800">
+       <defs>
+         <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+           <stop offset="0%" stop-color="#0f172a"/>
+           <stop offset="100%" stop-color="#111827"/>
+         </linearGradient>
+       </defs>
+       <rect width="100%" height="100%" fill="url(#g)"/>
+       <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+             font-family="monospace" font-size="48" fill="#94a3b8">PIMXMOJI</text>
+     </svg>`
+  );
+
+const persistHistory = (items: HistoryItem[]) => {
+  const trySave = (list: HistoryItem[]) => {
+    try {
+      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(list));
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  let trimmed = items.slice(0, MAX_HISTORY_ITEMS);
+  if (trySave(trimmed)) return trimmed;
+  trimmed = trimmed.slice(0, 10);
+  if (trySave(trimmed)) return trimmed;
+  trimmed = trimmed.slice(0, 5);
+  if (trySave(trimmed)) return trimmed;
+  trySave([]);
+  return [];
+};
 
 const Section = ({ title, icon: Icon, children }: { title: string, icon: any, children: React.ReactNode }) => (
   <div className="space-y-4 py-6 border-b border-zinc-200 dark:border-zinc-800/50 last:border-0">
@@ -154,7 +191,7 @@ function AppContent() {
             resolve();
           };
           img.onerror = () => resolve();
-          img.src = 'https://i.scdn.co/image/ab6761610000e5eb6a2240e30495392888718e67';
+          img.src = DEFAULT_IMAGE_DATA_URL;
         });
       } finally {
         if (active) setIsAppLoading(false);
@@ -199,7 +236,7 @@ function AppContent() {
 
   useEffect(() => {
     const loadHistory = () => {
-      const saved = localStorage.getItem('pimxmoji-history');
+      const saved = localStorage.getItem(HISTORY_STORAGE_KEY);
       if (saved) {
         try {
           setHistory(JSON.parse(saved));
@@ -265,10 +302,6 @@ function AppContent() {
     }, 100);
   };
 
-  useEffect(() => {
-    localStorage.setItem('pimxmoji-history', JSON.stringify(history));
-  }, [history]);
-
   const [shouldSaveHistory, setShouldSaveHistory] = useState(false);
 
   // Trigger generation whenever view changes to result or options change
@@ -332,10 +365,20 @@ function AppContent() {
                         
                         if (shouldSaveHistory) {
                           const selectedPreset = selectedPresetId ? PRESETS.find((p) => p.id === selectedPresetId) : null;
+                          let previewData = '';
+                          try {
+                            previewData = visibleCanvas.toDataURL('image/webp', 0.7);
+                          } catch {
+                            previewData = '';
+                          }
+                          if (!previewData || !previewData.startsWith('data:image/webp')) {
+                            previewData = visibleCanvas.toDataURL('image/png');
+                          }
+
                           const newItem: HistoryItem = {
                             id: Math.random().toString(36).substring(7),
                             timestamp: Date.now(),
-                            imageData: visibleCanvas.toDataURL('image/png'),
+                            imageData: previewData,
                             options: { ...options },
                             styleId: selectedPreset?.id || null,
                             styleLabel: selectedPreset
@@ -344,7 +387,7 @@ function AppContent() {
                                   ? `سفارشی ${options.mode}`
                                   : `Custom ${options.mode.toUpperCase()}`),
                           };
-                          setHistory(prev => [newItem, ...prev].slice(0, 50));
+                          setHistory(prev => persistHistory([newItem, ...prev]));
                           trackImageGeneration({
                             mode: options.mode,
                             styleKey: selectedPreset?.id || `custom_${options.mode}`,
@@ -980,7 +1023,7 @@ function AppContent() {
                     </div>
                     <History 
                       items={history} 
-                      onDelete={(id) => setHistory(prev => prev.filter(item => item.id !== id))}
+                      onDelete={(id) => setHistory(prev => persistHistory(prev.filter(item => item.id !== id)))}
                       onDownload={(item) => {
                         setItemToDownload(item);
                         setShowDownloadModal(true);
@@ -1244,7 +1287,7 @@ function AppContent() {
                     </div>
                     <History 
                       items={history} 
-                      onDelete={(id) => setHistory(prev => prev.filter(item => item.id !== id))}
+                      onDelete={(id) => setHistory(prev => persistHistory(prev.filter(item => item.id !== id)))}
                       onDownload={(item) => {
                         setItemToDownload(item);
                         setShowDownloadModal(true);
