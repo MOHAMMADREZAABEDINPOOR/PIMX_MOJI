@@ -18,7 +18,7 @@ import { trackImageGeneration, trackVisit10MinuteBucket } from './services/analy
 
 // --- Components ---
 const HISTORY_STORAGE_KEY = 'pimxmoji-history';
-const MAX_HISTORY_ITEMS = 20;
+const MAX_HISTORY_ITEMS = 200;
 const DEFAULT_IMAGE_DATA_URL =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(
@@ -53,6 +53,77 @@ const persistHistory = (items: HistoryItem[]) => {
   if (trySave(trimmed)) return trimmed;
   trySave([]);
   return [];
+};
+
+const HISTORY_DB_NAME = 'pimxmoji-history-db';
+const HISTORY_STORE = 'history';
+const HISTORY_DB_VERSION = 1;
+
+const openHistoryDb = () =>
+  new Promise<IDBDatabase>((resolve, reject) => {
+    if (!('indexedDB' in window)) {
+      reject(new Error('indexedDB not available'));
+      return;
+    }
+    const request = indexedDB.open(HISTORY_DB_NAME, HISTORY_DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(HISTORY_STORE)) {
+        const store = db.createObjectStore(HISTORY_STORE, { keyPath: 'id' });
+        store.createIndex('timestamp', 'timestamp');
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error('indexedDB open failed'));
+  });
+
+const loadHistoryFromDb = async (): Promise<HistoryItem[] | null> => {
+  try {
+    const db = await openHistoryDb();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(HISTORY_STORE, 'readonly');
+      const store = tx.objectStore(HISTORY_STORE);
+      const request = store.getAll();
+      request.onsuccess = () => {
+        const items = (request.result || []) as HistoryItem[];
+        items.sort((a, b) => b.timestamp - a.timestamp);
+        resolve(items);
+      };
+      request.onerror = () => reject(request.error || new Error('indexedDB getAll failed'));
+    });
+  } catch {
+    return null;
+  }
+};
+
+const saveHistoryToDb = async (items: HistoryItem[]) => {
+  const db = await openHistoryDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(HISTORY_STORE, 'readwrite');
+    const store = tx.objectStore(HISTORY_STORE);
+    store.clear();
+    items.forEach((item) => store.put(item));
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error || new Error('indexedDB write failed'));
+  });
+};
+
+const persistHistoryEverywhere = async (items: HistoryItem[]) => {
+  const trimmed = items.slice(0, MAX_HISTORY_ITEMS);
+  try {
+    await saveHistoryToDb(trimmed);
+    return trimmed;
+  } catch {
+    return persistHistory(trimmed);
+  }
+};
+
+const hasEmojiChars = (value: string) => /[\u{1F300}-\u{1FAFF}]/u.test(value);
+const normalizeOptionsForPerf = (base: ArtOptions) => {
+  if (hasEmojiChars(base.chars || '')) {
+    return { ...base, resolution: Math.min(base.resolution, 90) };
+  }
+  return base;
 };
 
 const Section = ({ title, icon: Icon, children }: { title: string, icon: any, children: React.ReactNode }) => (
@@ -235,7 +306,13 @@ function AppContent() {
   const resultContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const loadHistory = () => {
+    const loadHistory = async () => {
+      const dbItems = await loadHistoryFromDb();
+      if (dbItems && dbItems.length) {
+        setHistory(dbItems);
+        return;
+      }
+
       const saved = localStorage.getItem(HISTORY_STORAGE_KEY);
       if (saved) {
         try {
@@ -245,7 +322,7 @@ function AppContent() {
         }
       }
     };
-    loadHistory();
+    void loadHistory();
   }, []);
 
   useEffect(() => {
@@ -320,7 +397,8 @@ function AppContent() {
 
         try {
           // Step 1: Perform the intensive art generation on a hidden canvas
-          await generateArt(image, offscreenCanvas, options, (p) => {
+          const effectiveOptions = normalizeOptionsForPerf(options);
+          await generateArt(image, offscreenCanvas, effectiveOptions, (p) => {
             if (isMounted) setProgress(p);
           }, controller.signal);
 
@@ -340,8 +418,8 @@ function AppContent() {
                   visibleCanvas.height = finalImage.height;
                   // Manually draw the background color onto the canvas itself.
                   // This makes the background part of the image data and prevents race conditions.
-                  if (options.bgColor !== 'transparent') {
-                    ctx.fillStyle = options.bgColor;
+                  if (effectiveOptions.bgColor !== 'transparent') {
+                    ctx.fillStyle = effectiveOptions.bgColor;
                     ctx.fillRect(0, 0, visibleCanvas.width, visibleCanvas.height);
                   }
                   ctx.drawImage(finalImage, 0, 0);
@@ -379,23 +457,27 @@ function AppContent() {
                             id: Math.random().toString(36).substring(7),
                             timestamp: Date.now(),
                             imageData: previewData,
-                            options: { ...options },
+                            options: { ...effectiveOptions },
                             styleId: selectedPreset?.id || null,
                             styleLabel: selectedPreset
                               ? getPresetLabel(selectedPreset)
                               : (language === 'fa'
-                                  ? `سفارشی ${options.mode}`
-                                  : `Custom ${options.mode.toUpperCase()}`),
+                                  ? `سفارشی ${effectiveOptions.mode}`
+                                  : `Custom ${effectiveOptions.mode.toUpperCase()}`),
                           };
-                          setHistory(prev => persistHistory([newItem, ...prev]));
+                          setHistory(prev => {
+                            const next = [newItem, ...prev];
+                            void persistHistoryEverywhere(next);
+                            return next;
+                          });
                           trackImageGeneration({
-                            mode: options.mode,
-                            styleKey: selectedPreset?.id || `custom_${options.mode}`,
+                            mode: effectiveOptions.mode,
+                            styleKey: selectedPreset?.id || `custom_${effectiveOptions.mode}`,
                             styleLabel: selectedPreset
                               ? getPresetLabel(selectedPreset)
                               : (language === 'fa'
-                                  ? `سفارشی ${options.mode}`
-                                  : `Custom ${options.mode.toUpperCase()}`),
+                                  ? `سفارشی ${effectiveOptions.mode}`
+                                  : `Custom ${effectiveOptions.mode.toUpperCase()}`),
                           });
                           setShouldSaveHistory(false);
                         }
@@ -1023,7 +1105,11 @@ function AppContent() {
                     </div>
                     <History 
                       items={history} 
-                      onDelete={(id) => setHistory(prev => persistHistory(prev.filter(item => item.id !== id)))}
+                      onDelete={(id) => setHistory(prev => {
+                        const next = prev.filter(item => item.id !== id);
+                        void persistHistoryEverywhere(next);
+                        return next;
+                      })}
                       onDownload={(item) => {
                         setItemToDownload(item);
                         setShowDownloadModal(true);
@@ -1287,7 +1373,11 @@ function AppContent() {
                     </div>
                     <History 
                       items={history} 
-                      onDelete={(id) => setHistory(prev => persistHistory(prev.filter(item => item.id !== id)))}
+                      onDelete={(id) => setHistory(prev => {
+                        const next = prev.filter(item => item.id !== id);
+                        void persistHistoryEverywhere(next);
+                        return next;
+                      })}
                       onDownload={(item) => {
                         setItemToDownload(item);
                         setShowDownloadModal(true);
