@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="100%" height="100%">
+  <defs>
+    <linearGradient id="mjBg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0a0314" /><stop offset="50%" stop-color="#180730" /><stop offset="100%" stop-color="#07020e" /></linearGradient>
+    <linearGradient id="mjNeon" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ec4899"><animate attributeName="stop-color" values="#ec4899;#eab308;#06b6d4;#ec4899" dur="7s" repeatCount="indefinite" /></stop>
+      <stop offset="50%" stop-color="#eab308"><animate attributeName="stop-color" values="#eab308;#a855f7;#ec4899;#eab308" dur="7s" repeatCount="indefinite" /></stop>
+      <stop offset="100%" stop-color="#06b6d4"><animate attributeName="stop-color" values="#06b6d4;#ec4899;#eab308;#06b6d4" dur="7s" repeatCount="indefinite" /></stop>
+    </linearGradient>
+    <linearGradient id="mjGrid" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ec4899" stop-opacity="0" /><stop offset="100%" stop-color="#eab308" stop-opacity="0.35" /></linearGradient>
+    <filter id="mjGlow"><feGaussianBlur stdDeviation="5" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+  </defs>
+
+  <style>
+    @keyframes mjFloat { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+    .floating-palette { animation: mjFloat 5.6s ease-in-out infinite; }
+  </style>
+
+  <rect width="1200" height="360" fill="url(#mjBg)" />
+
+  <g opacity="0.65">
+    <line x1="0" y1="260" x2="1200" y2="260" stroke="#ec4899" stroke-opacity="0.25" stroke-width="1" />
+    <line x1="600" y1="260" x2="0" y2="360" stroke="url(#mjGrid)" stroke-width="1.5" />
+    <line x1="600" y1="260" x2="200" y2="360" stroke="url(#mjGrid)" stroke-width="1.5" />
+    <line x1="600" y1="260" x2="400" y2="360" stroke="url(#mjGrid)" stroke-width="1.5" />
+    <line x1="600" y1="260" x2="600" y2="360" stroke="url(#mjGrid)" stroke-width="1.5" />
+    <line x1="600" y1="260" x2="800" y2="360" stroke="url(#mjGrid)" stroke-width="1.5" />
+    <line x1="600" y1="260" x2="1000" y2="360" stroke="url(#mjGrid)" stroke-width="1.5" />
+    <line x1="600" y1="260" x2="1200" y2="360" stroke="url(#mjGrid)" stroke-width="1.5" />
+    <line x1="0" y1="290" x2="1200" y2="290" stroke="#ec4899" stroke-opacity="0.2" stroke-width="1" />
+    <line x1="0" y1="330" x2="1200" y2="330" stroke="#eab308" stroke-opacity="0.3" stroke-width="1.5" />
+  </g>
+
+  <circle cx="200" cy="110" r="140" fill="#ec4899" opacity="0.08" filter="url(#mjGlow)" />
+  <circle cx="960" cy="170" r="160" fill="#eab308" opacity="0.12" filter="url(#mjGlow)" />
+
+  <!-- 3D Canvas Palette & Particle Brush Strokes -->
+  <g transform="translate(940, 180)" class="floating-palette">
+    <circle cx="0" cy="0" r="110" fill="none" stroke="url(#mjNeon)" stroke-width="2" stroke-dasharray="8 6" opacity="0.75">
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="22s" repeatCount="indefinite" />
+    </circle>
+    <!-- Isometric Palette Body -->
+    <path d="M-60,-20 C-60,-65 20,-75 60,-35 C90,-5 80,45 40,65 C0,80 -30,65 -45,45 C-55,30 -60,0 -60,-20 Z" fill="#1b0a2e" stroke="#ec4899" stroke-width="2" filter="url(#mjGlow)" opacity="0.9" />
+    <!-- Color Wells -->
+    <circle cx="-25" cy="-35" r="8" fill="#ef4444" />
+    <circle cx="15" cy="-45" r="8" fill="#eab308" />
+    <circle cx="45" cy="-15" r="8" fill="#10b981" />
+    <circle cx="40" cy="25" r="8" fill="#06b6d4" />
+    <circle cx="0" cy="45" r="8" fill="#a855f7" />
+
+    <!-- Center Glowing Iris -->
+    <circle cx="0" cy="0" r="14" fill="#ec4899" filter="url(#mjGlow)">
+      <animate attributeName="r" values="12;18;12" dur="3s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#ec4899;#eab308;#06b6d4;#ec4899" dur="7s" repeatCount="indefinite" />
+    </circle>
+
+    <!-- Floating Badges -->
+    <g transform="translate(-120, -50)">
+      <rect x="0" y="0" width="85" height="22" rx="6" fill="#140526" stroke="#ec4899" stroke-width="1" />
+      <text x="42" y="15" font-family="'Fira Code', monospace" font-size="10" font-weight="bold" fill="#f472b6" text-anchor="middle">152 PRESETS</text>
+    </g>
+    <g transform="translate(65, 30)">
+      <rect x="0" y="0" width="85" height="22" rx="6" fill="#140526" stroke="#eab308" stroke-width="1" />
+      <text x="42" y="15" font-family="'Fira Code', monospace" font-size="10" font-weight="bold" fill="#facc15" text-anchor="middle">CANVAS 2D</text>
+    </g>
+    <g transform="translate(-40, 70)">
+      <rect x="0" y="0" width="85" height="22" rx="6" fill="#140526" stroke="#06b6d4" stroke-width="1" />
+      <text x="42" y="15" font-family="'Fira Code', monospace" font-size="10" font-weight="bold" fill="#22d3ee" text-anchor="middle">60 FPS GPU</text>
+    </g>
+  </g>
+
+  <!-- Left Typography -->
+  <g transform="translate(80, 140)">
+    <g transform="translate(0, -35)">
+      <rect x="0" y="-14" width="280" height="24" rx="12" fill="#ec4899" fill-opacity="0.12" stroke="#ec4899" stroke-width="1" />
+      <circle cx="12" cy="-2" r="4" fill="#ec4899" />
+      <text x="26" y="2" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="800" fill="#f472b6" letter-spacing="2">CREATIVE ART ENGINE // CANVAS 2D</text>
+    </g>
+
+    <text x="0" y="32" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, 'Montserrat', sans-serif" font-size="52" font-weight="900" fill="url(#mjNeon)" filter="url(#mjGlow)" letter-spacing="3">
+      PIMX_MOJI
+    </text>
+
+    <text x="0" y="68" font-family="'Fira Code', monospace" font-size="16" font-weight="600" fill="#e2e8f0" letter-spacing="1">
+      ⚡ Image-to-Art Studio with 152 Creative Rendering Styles on Cloudflare Pages
+    </text>
+
+    <g transform="translate(0, 92)">
+      <rect x="0" y="0" width="165" height="26" rx="6" fill="#140626" stroke="#ec4899" stroke-width="1" />
+      <text x="82" y="17" font-family="'Fira Code', monospace" font-size="11" font-weight="bold" fill="#f472b6" text-anchor="middle">🎨 152 Art Presets</text>
+
+      <rect x="175" y="0" width="160" height="26" rx="6" fill="#140626" stroke="#eab308" stroke-width="1" />
+      <text x="255" y="17" font-family="'Fira Code', monospace" font-size="11" font-weight="bold" fill="#facc15" text-anchor="middle">⚡ Real-Time Sliders</text>
+
+      <rect x="345" y="0" width="150" height="26" rx="6" fill="#140626" stroke="#06b6d4" stroke-width="1" />
+      <text x="420" y="17" font-family="'Fira Code', monospace" font-size="11" font-weight="bold" fill="#22d3ee" text-anchor="middle">🖼️ Canvas Export</text>
+
+      <rect x="505" y="0" width="150" height="26" rx="6" fill="#140626" stroke="#a855f7" stroke-width="1" />
+      <text x="580" y="17" font-family="'Fira Code', monospace" font-size="11" font-weight="bold" fill="#c084fc" text-anchor="middle">📱 PWA Mobile</text>
+    </g>
+  </g>
+
+  <line x1="0" y1="358" x2="1200" y2="358" stroke="url(#mjNeon)" stroke-width="3" filter="url(#mjGlow)" />
+</svg>

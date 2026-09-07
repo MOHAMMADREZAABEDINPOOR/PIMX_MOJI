@@ -22,7 +22,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![HTML5 Canvas](https://img.shields.io/badge/Canvas-Hardware_Accelerated-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://html.spec.whatwg.org/)
 [![Styles: 152](https://img.shields.io/badge/Styles-152_Creative_Presets-purple?style=for-the-badge)](https://github.com/MOHAMMADREZAABEDINPOOR/PIMX_MOJI)
-[![Read in Persian](https://img.shields.io/badge/مطالعه_به_فارسی-Persian_README-008080?style=for-the-badge)](#-بخش-فوقالعاده-مفصل-و-جامع-به-زبان-فارسی-persian-documentation)
+[![Read in Persian](https://img.shields.io/badge/مطالعه_به_فارسی-Persian_README-008080?style=for-the-badge)](#persian-documentation)
 
 <p align="center">
   <b>PIMX_MOJI</b> is a creative image transformation workstation and algorithmic art studio. Powered by high-speed HTML5 Canvas pixel manipulation, PIMX_MOJI transforms ordinary photographs into 152 distinct stylistic renderings, including ASCII text art, emoji mosaics, retro 8-bit game palettes, Cyberpunk neon matrices, and watercolor washes — entirely client-side.
@@ -35,7 +35,7 @@
 [Directory Anatomy](#-exhaustive-directory--file-anatomy) •
 [Pixel Engine](#-pixel-processing-engine--algorithms) •
 [Quick Start](#-quick-start--local-development) •
-[توضیحات فارسی](#-بخش-فوقالعاده-مفصل-و-جامع-به-زبان-فارسی-persian-documentation) •
+[توضیحات فارسی](#persian-documentation) •
 [Roadmap](#-strategic-engineering-roadmap) •
 [License](#-copyleft-license--legal-attribution)
 
@@ -112,7 +112,8 @@ Open `http://localhost:5173` in your browser.
 
 ---
 
-## 🇮🇷 بخش فوق‌العاده مفصل و جامع به زبان فارسی (Persian Documentation)
+## Persian Documentation
+### 🇮🇷 مستندات فوق‌العاده مفصل، جامع و فنی به زبان فارسی
 
 ### ۱. مقدمه و چرایی توسعه استودیوی دیجیتال PIMX_MOJI
 پروژه **PIMX_MOJI** یک آزمایشگاه پیشرفته پردازش تصویر و تبدیل عکس به آثار هنری است که به صورت ۱۰۰٪ کلاینت‌ساید و بر بستر **HTML5 Canvas** و زبان‌های **React** و **TypeScript** توسعه یافته است. کاربر می‌تواند در چند صدم ثانیه، هر عکسی را به نقاشی‌های اسکی‌آرت (ASCII)، موزاییک‌های ایموجی، و استایل‌های رترو و سایبرپانک تبدیل کرده و با کیفیت اصلی دانلود کند.
@@ -137,7 +138,7 @@ Distributed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
 <!-- ============================================================================== -->
 <!-- ANIMATED CAPSULE FOOTER                                                        -->
 <!-- ============================================================================== -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=1,12,24,30&height=120&section=footer" alt="Footer" width="100%" />
+<img src="./assets/footer.svg" alt="PIMX_MOJI 3D Footer" width="100%" />
 
 <sub>Crafted with creativity by <a href="https://github.com/MOHAMMADREZAABEDINPOOR"><b>MOHAMMADREZA ABEDINPOOR</b></a>. If PIMX_MOJI inspires your artistic journey, leave a ⭐!</sub>
 

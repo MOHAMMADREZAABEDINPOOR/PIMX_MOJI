@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 140" width="100%" height="100%">
+  <defs>
+    <linearGradient id="mjFBg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#07020e" /><stop offset="50%" stop-color="#180730" /><stop offset="100%" stop-color="#07020e" /></linearGradient>
+    <linearGradient id="mjFNeon" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ec4899" /><stop offset="50%" stop-color="#eab308" /><stop offset="100%" stop-color="#06b6d4" /></linearGradient>
+    <filter id="mjFGlow"><feGaussianBlur stdDeviation="4" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+  </defs>
+  <rect width="1200" height="140" fill="url(#mjFBg)" />
+  <line x1="0" y1="2" x2="1200" y2="2" stroke="url(#mjFNeon)" stroke-width="3" filter="url(#mjFGlow)" />
+  <text x="600" y="55" font-family="'Segoe UI', sans-serif" font-size="20" font-weight="900" fill="url(#mjFNeon)" text-anchor="middle" letter-spacing="3" filter="url(#mjFGlow)">
+    PIMX_MOJI // GENERATIVE VISUAL TRANSFORMATION
+  </text>
+  <text x="600" y="85" font-family="'Fira Code', monospace" font-size="13" font-weight="500" fill="#94a3b8" text-anchor="middle">
+    Architected &amp; Vibe Coded with high-leverage AI choreography by MOHAMMADREZA ABEDINPOOR
+  </text>
+  <text x="600" y="112" font-family="'Fira Code', monospace" font-size="11" font-weight="bold" fill="#ec4899" text-anchor="middle" opacity="0.8">
+    ★ STAR THIS REPOSITORY ON GITHUB TO CELEBRATE ALGORITHMIC ART ★
+  </text>
+</svg>
