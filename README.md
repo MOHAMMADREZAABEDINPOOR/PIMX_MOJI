@@ -8,6 +8,12 @@
 
 # 🎨 PIMX MOJI
 
+<!-- pimx-live-site:start -->
+## Live website
+
+**[Open PIMX_MOJI ↗](https://pimxmoji.pages.dev/)**
+<!-- pimx-live-site:end -->
+
 A browser image-to-character art studio with preset styles, a character picker, canvas processing, previews and conversion history.
 
 [GitHub](https://github.com/MOHAMMADREZAABEDINPOOR/PIMX_MOJI) · [PIMX / Profile](https://github.com/MOHAMMADREZAABEDINPOOR) · [Static artwork](assets/readme/hero.png)
