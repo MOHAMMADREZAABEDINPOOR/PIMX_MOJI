@@ -10,6 +10,12 @@
 
 # 🎨 PIMX MOJI
 
+<!-- pimx-live-site:start -->
+## وب‌سایت آنلاین
+
+**[مشاهدهٔ PIMX_MOJI ↗](https://pimxmoji.pages.dev/)**
+<!-- pimx-live-site:end -->
+
 استودیوی تبدیل تصویر به هنر متنی در مرورگر؛ دارای سبک‌های آماده، انتخاب کاراکتر، پردازش Canvas، پیش‌نمایش و تاریخچه تبدیل.
 
 [GitHub](https://github.com/MOHAMMADREZAABEDINPOOR/PIMX_MOJI) · [PIMX / Profile](https://github.com/MOHAMMADREZAABEDINPOOR) · [بنر ثابت](assets/readme/hero.png)
