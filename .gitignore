@@ -6,3 +6,9 @@ coverage/
 *.log
 .env*
 !.env.example
+.local/
+test-results/
+playwright-report/
+.wrangler/
+.taste-skill/
+.impeccable/

@@ -1,0 +1,494 @@
+/* The reference's source/history + configuration composition. */
+.studio-layout.classic-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 640px);
+  grid-template-rows: auto;
+  width: calc(100% - 64px);
+  max-width: 1040px;
+  height: auto;
+  min-height: 0;
+  padding: 38px 0 55px;
+  gap: 40px;
+  margin-inline: auto;
+  align-items: start;
+}
+.studio-column-heading {
+  margin-bottom: 28px;
+}
+.studio-column-heading h1 {
+  font-size: clamp(23px, 2.2vw, 31px);
+  font-weight: 750;
+  letter-spacing: -0.025em;
+  line-height: 1.5;
+}
+.studio-column-heading p {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+}
+.source-pane {
+  min-width: 0;
+  position: sticky;
+  top: 98px;
+  max-height: calc(100dvh - 115px);
+  overflow: auto;
+  padding-inline-end: 4px;
+  scrollbar-gutter: stable;
+}
+.source-pane #control-source {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+.source-pane #control-source > .settings-title {
+  display: none;
+}
+.source-pane .upload-zone {
+  border: 2px dashed #7061a755;
+  background: var(--panel);
+  border-radius: 24px;
+  padding: 18px;
+  gap: 9px;
+}
+.source-current-image {
+  display: block;
+  width: 100%;
+  height: 160px;
+  object-fit: contain;
+  border-radius: 15px;
+  background: var(--scene-bg);
+}
+.source-pane .upload-zone > svg {
+  display: none;
+}
+.source-pane .upload-zone strong {
+  font-size: 13px;
+  margin-top: 4px;
+}
+.source-pane .upload-zone small {
+  display: none;
+}
+.source-pane .upload-zone span {
+  font-size: 11px;
+}
+.source-pane .control-section:has(.source-samples) {
+  display: none;
+}
+.source-pane .source-tools {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0;
+  margin-block: 14px;
+}
+.source-pane .source-tools .button {
+  font-size: 11px;
+  min-height: 40px;
+  padding: 9px;
+  gap: 7px;
+}
+.source-pane .source-tools .button:last-child {
+  grid-column: 1/-1;
+}
+.source-pane .source-tools .button > svg:last-child {
+  display: none;
+}
+.classic-layout .canvas-workspace {
+  display: flex;
+  position: relative;
+  top: 0;
+  width: 100%;
+  height: 380px;
+  min-height: 0;
+  max-height: none;
+  margin-block: 22px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  overflow: hidden;
+  background: var(--scene-bg);
+}
+.classic-layout .canvas-toolbar {
+  min-height: 46px;
+  padding: 7px 10px;
+  gap: 6px;
+}
+.classic-layout .canvas-toolbar > div {
+  gap: 4px;
+}
+.classic-layout .canvas-toolbar .toolbar-button span {
+  display: none;
+}
+.classic-layout .canvas-toolbar .icon-button {
+  width: 30px;
+  min-width: 30px;
+  min-height: 30px;
+}
+.classic-layout .canvas-mode {
+  display: none;
+}
+.classic-layout .canvas-scroll {
+  padding: 14px;
+  min-height: 0;
+}
+.classic-layout .canvas-bottom {
+  padding: 6px 8px;
+  gap: 5px;
+  min-height: 40px;
+}
+.classic-layout .canvas-bottom > span {
+  display: none;
+}
+.classic-layout .canvas-bottom .icon-button {
+  min-width: 30px;
+  min-height: 28px;
+}
+.classic-layout .canvas-bottom .toolbar-button {
+  font-size: 10px;
+}
+.classic-layout .hover-preview-banner {
+  font-size: 11px;
+  padding: 8px 11px;
+}
+.classic-layout .hover-preview-banner > span {
+  display: none;
+}
+.studio-history {
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.studio-history > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.studio-history h2 {
+  font-size: 27px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+.studio-history > p {
+  margin-block: 8px 22px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.studio-history .text-button {
+  font-size: 12px;
+}
+.studio-history-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.studio-history-grid button {
+  min-width: 0;
+  text-align: start;
+}
+.studio-history-grid img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 9px;
+  background: var(--panel);
+}
+.studio-history-grid span {
+  display: block;
+  font-size: 10px;
+  margin-top: 7px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-block: 28px;
+  gap: 12px;
+  color: var(--muted);
+}
+.history-empty strong {
+  font-size: 14px;
+  color: var(--text);
+}
+.history-empty span {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.configuration-pane {
+  min-width: 0;
+}
+.configuration-surface {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 25px;
+  padding: 25px;
+}
+.configuration-surface .named-presets {
+  height: auto;
+  padding: 0 0 25px;
+  margin: 0 0 28px;
+  border-bottom: 1px solid var(--line);
+}
+.configuration-surface .preset-browser-heading h2 {
+  font-size: 14px;
+}
+.configuration-surface .preset-instructions {
+  font-size: 12px;
+  max-width: 60ch;
+}
+.configuration-surface .preset-search {
+  flex: 1;
+  min-height: 42px;
+}
+.configuration-surface .preset-mode-filters {
+  justify-content: flex-start;
+  padding-block: 12px;
+}
+.configuration-surface .preset-mode-filters button {
+  flex: 0 1 80px;
+  font-size: 11px;
+  min-height: 36px;
+}
+.configuration-surface .preset-name-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-rows: 57px;
+  max-height: 350px;
+  flex: none;
+  min-height: 0;
+  overflow: auto;
+  gap: 8px;
+  padding: 2px 7px 2px 2px;
+}
+.configuration-surface .preset-name-list button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 7px;
+  min-height: 55px;
+  gap: 4px;
+}
+.configuration-surface .preset-name-list button:hover,
+.configuration-surface .preset-name-list button:focus-visible {
+  background: var(--panel-2);
+  border-color: var(--accent-text);
+}
+.configuration-surface .preset-name-list button.selected {
+  color: var(--accent-text);
+  border-color: var(--accent-text);
+  background: var(--panel-2);
+}
+.configuration-surface .preset-name-list .style-color-dot {
+  display: none;
+}
+.configuration-surface .preset-name-list button > span:nth-child(2) {
+  font-size: 10px;
+  font-weight: 550;
+  line-height: 1.45;
+}
+.configuration-surface .preset-name-list small {
+  display: none;
+}
+.classic-layout .control-panel {
+  display: block;
+  position: static;
+  grid-column: auto;
+  grid-row: auto;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  width: 100%;
+  overflow: visible;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.classic-layout .all-settings {
+  display: block;
+}
+.classic-layout .settings-title {
+  font-size: 14px;
+  font-weight: 650;
+  margin-bottom: 20px;
+}
+.classic-layout .settings-section {
+  padding-bottom: 28px;
+  margin-bottom: 28px;
+  scroll-margin-top: 100px;
+}
+.classic-layout .control-section h3 {
+  font-size: 12px;
+  color: var(--muted);
+}
+.classic-layout .engine-selector button {
+  flex-direction: row;
+  justify-content: center;
+  gap: 9px;
+  min-height: 54px;
+  padding: 10px;
+  border-radius: 10px;
+}
+.classic-layout .engine-selector b {
+  font-size: 24px;
+}
+.classic-layout .field-label {
+  font-size: 12px;
+}
+.classic-layout .field-label textarea {
+  min-height: 70px;
+}
+.classic-layout .range-field {
+  margin-top: 23px;
+}
+.classic-layout .range-field > span {
+  font-size: 12px;
+}
+.classic-layout .color-fields {
+  gap: 18px;
+}
+.classic-layout .motion-grid button {
+  border-radius: 12px;
+}
+@media (max-width: 1000px) {
+  .studio-layout.classic-layout {
+    grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.4fr);
+    gap: 28px;
+    width: calc(100% - 40px);
+  }
+  .configuration-surface {
+    padding: 20px;
+  }
+  .configuration-surface .preset-name-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .studio-column-heading h1 {
+    font-size: 25px;
+  }
+  .source-pane {
+    top: 90px;
+  }
+  .classic-layout .canvas-label {
+    font-size: 9px;
+  }
+}
+@media (max-width: 640px) {
+  .studio-layout.classic-layout {
+    display: flex;
+    flex-direction: column;
+    width: calc(100% - 28px);
+    padding-block: 25px 35px;
+    gap: 30px;
+  }
+  .source-pane {
+    position: static;
+    max-height: none;
+    width: 100%;
+    overflow: visible;
+    padding: 0;
+  }
+  .configuration-pane {
+    width: 100%;
+  }
+  .studio-column-heading {
+    margin-bottom: 19px;
+  }
+  .studio-column-heading h1 {
+    font-size: 25px;
+  }
+  .studio-column-heading p {
+    font-size: 13px;
+  }
+  .source-pane .source-tools {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .source-pane .source-tools .button {
+    grid-column: auto;
+    font-size: 10px;
+    padding-inline: 5px;
+  }
+  .source-pane .source-tools .button > svg {
+    width: 14px;
+  }
+  .source-pane .source-tools .button:last-child {
+    grid-column: auto;
+  }
+  .source-current-image {
+    height: 180px;
+  }
+  .classic-layout .canvas-workspace {
+    height: 350px;
+    max-height: none;
+    margin-block: 18px;
+    position: relative;
+    top: 0;
+  }
+  .studio-history-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .configuration-surface {
+    border-radius: 20px;
+    padding: 20px 15px;
+  }
+  .configuration-surface .preset-name-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-height: 330px;
+    gap: 7px;
+  }
+  .configuration-surface .preset-name-list button > span:nth-child(2) {
+    font-size: 10px;
+  }
+  .classic-layout .engine-selector button {
+    flex-direction: column;
+    gap: 5px;
+  }
+  .classic-layout .engine-selector span {
+    font-size: 11px;
+  }
+  .classic-layout .settings-section {
+    scroll-margin-top: 85px;
+  }
+  .studio-history h2 {
+    font-size: 25px;
+  }
+  .history-empty {
+    padding-block: 20px;
+  }
+}
+@media (max-width: 359px) {
+  .source-pane .source-tools {
+    grid-template-columns: 1fr;
+  }
+  .source-pane .source-tools .button {
+    font-size: 12px;
+  }
+  .source-current-image {
+    height: 150px;
+  }
+  .configuration-surface {
+    padding-inline: 12px;
+  }
+  .configuration-surface .preset-name-list {
+    gap: 5px;
+  }
+  .configuration-surface .preset-name-list button {
+    padding-inline: 4px;
+    border-radius: 10px;
+  }
+  .configuration-surface .preset-name-list button > span:nth-child(2) {
+    font-size: 9px;
+  }
+  .studio-column-heading h1 {
+    font-size: 23px;
+  }
+}

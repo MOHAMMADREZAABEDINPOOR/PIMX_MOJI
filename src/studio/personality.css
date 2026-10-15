@@ -1,0 +1,89 @@
+:root { --ease-art: cubic-bezier(.16, 1, .3, 1); --motion-feedback: 240ms; }
+body, .site-header, .configuration-surface, .settings-section, input, select, textarea {
+  transition: background-color 350ms ease, color 250ms ease, border-color 250ms ease;
+}
+button, a, .preset-select, .toolbar-button {
+  transition: background-color var(--motion-feedback) ease, border-color var(--motion-feedback) ease, color 200ms ease, box-shadow 320ms var(--ease-art), transform 320ms var(--ease-art), opacity 200ms ease;
+}
+input, textarea { caret-color: var(--accent-text); }
+.brand-mark { width: 34px; height: 34px; flex-shrink: 0; overflow: visible; }
+.header-actions .theme-button { display: inline-flex; }
+.brand-icon .brand-mark { width: 32px; height: 32px; }
+.mark-pixels, .mark-spark { transform-origin: center; transition: transform 400ms var(--ease-art); }
+.brand:hover .mark-pixels { transform: translateY(-2px); }
+.brand:hover .mark-spark { transform: rotate(90deg); }
+.footer-wordmark .brand-mark { width: clamp(40px, 8vw, 110px); height: auto; }
+.style-hover-card {
+  position: fixed; z-index: 120; width: min(192px, calc(100vw - 24px)); padding: 8px;
+  translate: 0 -100%; border-radius: 16px; background: var(--panel-2); color: var(--text);
+  box-shadow: 0 18px 44px -12px #0008; pointer-events: auto; text-align: center;
+}
+.style-hover-card.tooltip-below { translate: none; }
+.style-hover-card::after { content: ""; position: absolute; left: calc(var(--tooltip-arrow, 50%) - 5px); bottom: -5px; width: 10px; height: 10px; background: var(--panel-2); rotate: 45deg; }
+.style-hover-card.tooltip-below::after { bottom: auto; top: -5px; }
+.style-hover-card strong { display: block; padding: 8px 2px 3px; font-size: 12px; line-height: 1.4; }
+.tooltip-art { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: 10px; background: var(--bg); }
+.tooltip-art canvas { display: block; width: 100%; height: 100%; object-fit: contain; transition: opacity 180ms ease; }
+.tooltip-art canvas[data-preview-state="pending"] { opacity: 0; }
+.tooltip-rendering, .tooltip-error { position: absolute; inset: 0; display: grid; place-items: center; padding: 14px; font-size: 11px; line-height: 1.8; color: var(--muted); }
+.tooltip-error { display: none; }
+.tooltip-art canvas[data-preview-state="ready"] ~ span { display: none; }
+.tooltip-art canvas[data-preview-state="error"] ~ .tooltip-rendering { display: none; }
+.tooltip-art canvas[data-preview-state="error"] ~ .tooltip-error { display: grid; }
+.guided-layout .preset-name-list .preset-select { position: relative; isolation: isolate; }
+.guided-layout .preset-name-list .preset-select:hover, .guided-layout .preset-name-list .preset-select:focus-visible { box-shadow: 0 7px 16px -12px var(--accent); }
+.dimension-copy h1 { position: relative; }
+.live-text { display: inline-block; position: relative; }
+.live-text > span:first-child { opacity: 0; }
+.live-text-display { position: absolute; inset: 0; white-space: nowrap; }
+.dimension-copy h1:hover { animation: character-echo 700ms var(--ease-art) both; }
+@keyframes character-echo {
+  0%, 100% { text-shadow: 0 0 transparent; }
+  25% { text-shadow: -3px 1px #4964e977, 3px -1px #a08aff66; }
+  55% { text-shadow: 2px 0 #4964e944, -2px 0 #a08aff44; }
+}
+.creative-loader { min-height: 420px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 18px; padding: 32px; color: var(--text); background: var(--bg); text-align: center; }
+.creative-loader.loader-full { position: fixed; inset: 0; z-index: 150; min-height: 100dvh; }
+.creative-loader strong { font-size: 24px; letter-spacing: .08em; }
+.creative-loader p { color: var(--muted); font-size: 15px; line-height: 1.8; }
+.loader-emblem { width: 150px; height: 150px; display: grid; place-items: center; position: relative; }
+.loader-emblem > .brand-mark { width: 80px; height: 80px; color: var(--accent-text); animation: logo-assemble 900ms var(--ease-art) both; }
+.loader-character { position: absolute; font: 600 18px Inter, sans-serif; color: var(--accent-text); animation: character-orbit 2.4s ease-in-out infinite alternate; }
+.loader-character:nth-child(2) { top: 6px; left: 16px; }
+.loader-character:nth-child(3) { right: 0; top: 56px; animation-delay: -.8s; }
+.loader-character:nth-child(4) { bottom: 0; left: 40px; animation-delay: -1.6s; }
+.loader-track { width: 130px; height: 3px; background: var(--panel-2); border-radius: 3px; overflow: hidden; }
+.loader-track i { display: block; height: 100%; width: 45%; background: var(--accent-text); border-radius: inherit; animation: loader-scan 1.3s ease-in-out infinite alternate; }
+@keyframes logo-assemble { from { opacity: .2; transform: scale(.8) rotate(-8deg); } to { opacity: 1; transform: none; } }
+@keyframes character-orbit { to { transform: translateY(-9px) rotate(8deg); opacity: .5; } }
+@keyframes loader-scan { to { transform: translateX(125%); } }
+@supports (interpolate-size: allow-keywords) {
+  .settings-section { interpolate-size: allow-keywords; }
+  .settings-section::details-content { height: 0; overflow: clip; opacity: 0; transition: height 300ms var(--ease-art), opacity 200ms ease, content-visibility 300ms allow-discrete; }
+  .settings-section[open]::details-content { height: auto; opacity: 1; }
+}
+@media (hover: none), (pointer: coarse) {
+  .guided-layout .preset-name-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) and (pointer: coarse) {
+  .guided-layout .preset-name-list { grid-template-columns: 1fr; }
+  .guided-layout .preset-name-list .preset-select { min-height: 48px; justify-content: center; font-size: 12px; }
+  .guided-layout .preset-name-list .style-preview-trigger { min-height: 48px; width: 76px; flex-direction: row; font-size: 10px; }
+}
+@media (max-width: 600px) {
+  .header-actions .theme-button { display: inline-flex; }
+  .header-actions .icon-button { min-width: 36px; min-height: 44px; }
+}
+@media (max-width: 360px) {
+  .site-header { padding-inline: 10px; gap: 6px; }
+  .site-header .brand { font-size: 16px; gap: 5px; }
+  .site-header .brand-icon { width: 27px; height: 32px; }
+  .site-header .brand-icon .brand-mark { width: 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; }
+  .dimension-copy h1:hover, .loader-emblem > .brand-mark, .loader-character, .loader-track i { animation: none; }
+  button, a, .mark-pixels, .mark-spark, .tooltip-art canvas { transition-duration: 100ms; }
+  .brand:hover .mark-pixels, .brand:hover .mark-spark { transform: none; }
+  .settings-section::details-content { transition-duration: 100ms; }
+}

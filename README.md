@@ -1,145 +1,48 @@
-<div align="center">
+# PIMX MOJI
 
-<!-- ============================================================================== -->
-<!-- DYNAMIC ANIMATED CAPSULE HEADER                                                -->
-<!-- ============================================================================== -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=1,12,24,30&height=220&section=header&text=PIMX_MOJI&fontSize=42&fontAlignY=35&desc=%E2%9A%A1%20152%20Generative%20Styles%2C%20ASCII%20Studio%20%26%20Emoji%20Mosaics&descFontSize=16&descAlignY=62" alt="PIMX_MOJI Banner" width="100%" />
+A browser-based photo-to-character studio with 300 styles: ASCII, word mosaics and emoji art. Persian/English, dark/light themes, live style previews, brushes, motion and local project storage.
 
-<!-- ============================================================================== -->
-<!-- ANIMATED TYPING SVG TELEMETRY                                                 -->
-<!-- ============================================================================== -->
-<a href="https://github.com/MOHAMMADREZAABEDINPOOR/PIMX_MOJI">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=20&duration=2800&pause=1000&color=00D2FF&center=true&vCenter=true&width=780&lines=High-Performance+Image-to-Art+Studio+with+152+Generative+Presets;High-Resolution+ASCII+Art+Generator+with+Custom+Ramps+%26+ANSI+Colors;Unicode+Emoji+Mosaic+Synthesizer+with+Euclidean+Color+Matching;Retro+8-Bit+Gaming+Palettes+(NES%2C+Game+Boy%2C+Commodore+64);Cyberpunk+Glitch+Art%2C+CRT+Phosphor+Scanlines+%26+Neon+Bloom;100%25+Client-Side+GPU+Rendering+via+HTML5+Canvas+2D+Context" alt="Typing SVG" />
-</a>
+## Run
 
-<br/>
+Use Node.js 22.13+:
 
-<!-- ============================================================================== -->
-<!-- BADGES MATRIX                                                                  -->
-<!-- ============================================================================== -->
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg?style=for-the-badge&logo=gnu)](https://www.gnu.org/licenses/agpl-3.0)
-[![React: 18+](https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![HTML5 Canvas](https://img.shields.io/badge/Canvas-Hardware_Accelerated-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://html.spec.whatwg.org/)
-[![Styles: 152](https://img.shields.io/badge/Styles-152_Creative_Presets-purple?style=for-the-badge)](https://github.com/MOHAMMADREZAABEDINPOOR/PIMX_MOJI)
-[![Read in Persian](https://img.shields.io/badge/مطالعه_به_فارسی-Persian_README-008080?style=for-the-badge)](#persian-documentation)
-
-<p align="center">
-  <b>PIMX_MOJI</b> is a creative image transformation workstation and algorithmic art studio. Powered by high-speed HTML5 Canvas pixel manipulation, PIMX_MOJI transforms ordinary photographs into 152 distinct stylistic renderings, including ASCII text art, emoji mosaics, retro 8-bit game palettes, Cyberpunk neon matrices, and watercolor washes — entirely client-side.
-</p>
-
-<!-- ============================================================================== -->
-<!-- QUICK NAVIGATION ANCHORS                                                       -->
-<!-- ============================================================================== -->
-[Artistic Presets](#-artistic-presets--filter-matrix) •
-[Directory Anatomy](#-exhaustive-directory--file-anatomy) •
-[Pixel Engine](#-pixel-processing-engine--algorithms) •
-[Quick Start](#-quick-start--local-development) •
-[توضیحات فارسی](#persian-documentation) •
-[Roadmap](#-strategic-engineering-roadmap) •
-[License](#-copyleft-license--legal-attribution)
-
-</div>
-
----
-
-## 🎨 Artistic Presets & Filter Matrix
-
-PIMX_MOJI features **152 distinct algorithmic presets** across 6 creative domains:
-1. **ASCII & Typography Matrix**: High-contrast character ramps, inverted luminance, colored ANSI exports.
-2. **Emoji Mosaic Synthesizer**: Converts pixel clusters into mathematically matched Unicode emojis.
-3. **Retro 8-Bit Gaming**: Snaps colors to authentic retro palettes (NES, Sega Genesis, Game Boy green-scale).
-4. **Cyberpunk & Glitch**: Color channel splitting, CRT scanline phosphor emulation, and neon bloom.
-5. **Traditional Fine Arts**: Oil painting impasto, pencil sketch hatching, and watercolor bleeding.
-6. **Abstract Halftones**: CMYK printing rosette patterns and newspaper dithering dots.
-
----
-
-## 📂 Exhaustive Directory & File Anatomy
-
-```
-d:/code/PIMXMOJI/
-│
-├── index.html                       # Responsive HTML5 canvas viewport & font loaders
-├── package.json                     # React 18, TypeScript, Vite, Lucide React dependencies
-├── generate_presets.js              # Node utility script generating algorithmic presets matrix
-├── README.md                        # Master comprehensive bilingual documentation
-│
-├── src/                             # Core Application Source
-│   ├── main.tsx                     # React 18 createRoot bootstrap
-│   ├── App.tsx                      # Primary visual workspace and filter controls
-│   ├── index.css                    # Tailwind utility directives and custom canvas styling
-│   │
-│   ├── constants/
-│   │   └── presets.ts               # Exhaustive registry of all 152 generative style definitions
-│   │
-│   ├── components/
-│   │   ├── Navbar.tsx               # Brand navigation bar with export action buttons
-│   │   ├── PresetPreview.tsx        # Thumbnail grid showing live preview of styles
-│   │   ├── CharacterPicker.tsx      # Character ramp selector for custom ASCII conversions
-│   │   ├── History.tsx              # Session transformation history and rollback manager
-│   │   └── ZoomModal.tsx            # Fullscreen inspection lightbox for rendered art
-│   │
-│   ├── contexts/
-│   │   └── SettingsContext.tsx      # Global canvas resolution and render setting context
-│   │
-│   ├── admin/
-│   │   └── PimxMojiAdmin.tsx        # Administrative analytics and telemetry visualizer
-│   │
-│   └── utils/
-│       └── imageProcessing.ts       # Low-level Canvas pixel manipulation & dithering filters
-│
-├── cloudflare/
-│   └── d1-schema.sql                # Cloudflare D1 database schema for anonymous art metrics
-│
-└── functions/                       # Cloudflare Pages Serverless Edge API
-    └── api/
-        └── analytics.js             # Anonymous telemetry logger
-```
-
----
-
-## 🚀 Quick Start & Local Development
-
-```bash
-git clone https://github.com/MOHAMMADREZAABEDINPOOR/PIMX_MOJI.git
-cd PIMX_MOJI
-
-npm install
+```sh
+npm ci
 npm run dev
 ```
-Open `http://localhost:5173` in your browser.
 
----
+Build with `npm run build`. Deploy `dist` to any static host; `npm run preview` serves the production build locally. No backend, API key, account, cloud database or tracking endpoint is required.
 
-## Persian Documentation
-### 🇮🇷 مستندات فوق‌العاده مفصل، جامع و فنی به زبان فارسی
+The build prerenders the clean routes `/`, `/studio`, `/styles`, `/library` and `/result`, with metadata, canonical URLs and a generated sitemap. Language stays in browser preferences and never changes the URL. Library and result are `noindex`. Legacy `/fa/...`, `/en/...` and hash links still open; Cloudflare redirects remove old language prefixes. Configure a static host to serve directory index files with root `index.html` as the app fallback. If the production domain changes, update `SITE` in `src/studio/seo.ts`, the absolute URLs in `index.html`, and `public/robots.txt`. Submit the deployed sitemap to your search console.
 
-### ۱. مقدمه و چرایی توسعه استودیوی دیجیتال PIMX_MOJI
-پروژه **PIMX_MOJI** یک آزمایشگاه پیشرفته پردازش تصویر و تبدیل عکس به آثار هنری است که به صورت ۱۰۰٪ کلاینت‌ساید و بر بستر **HTML5 Canvas** و زبان‌های **React** و **TypeScript** توسعه یافته است. کاربر می‌تواند در چند صدم ثانیه، هر عکسی را به نقاشی‌های اسکی‌آرت (ASCII)، موزاییک‌های ایموجی، و استایل‌های رترو و سایبرپانک تبدیل کرده و با کیفیت اصلی دانلود کند.
+`public/logo.svg`, `public/favicon.svg` and `public/social-card.png` contain the character-face brand assets. The loading screen follows the saved theme and language, and appears during real initialization or lazy page loading without an artificial delay. Hover/focus previews float directly above a style name and use the current uploaded photo. On touch devices, tap the adjacent Preview control; selecting the name still configures the next generation.
 
----
+## Your library
 
-### ۲. تشریح ساختار فایل‌های پروژه
-- **`src/constants/presets.ts`**: تعریف دقیق ۱۵۲ استایل هنری متنوع و ماتریس‌های پالت رنگی.
-- **`src/utils/imageProcessing.ts`**: توابع محاسباتی خواندن پیکسل‌ها، تبدیل به مقادیر روشنایی (Luminance) و الگوریتم‌های دیترینگ فلوید-اشتاینبرگ.
-- **`src/components/PresetPreview.tsx`**: پنجره پیش‌نمایش بلادرنگ فیلترها.
+Photos, editable projects and custom styles stay in IndexedDB in this browser. Studio edits save automatically after a short pause. Hover or focus any of the 300 style names to preview on your own photo; click or tap to apply. Style-gallery samples all use the same portrait for comparison.
 
----
+To move to another browser/device:
 
-## 📜 Copyleft License & Legal Attribution
+1. Open **Library** and choose **Download full backup**.
+2. Move the downloaded `.pimx-library.json` file to the other device and open this website.
+3. Choose **Restore backup** in Library and select that file.
 
-Distributed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+A backup includes source photos, thumbnails, project settings, motion and custom styles. Restore merges with existing data; the newer version of the same project wins and existing custom styles are retained. Re-importing a backup does not duplicate projects. Invalid files are rejected before writing. Backup imports support up to 150 MB.
 
----
+Clearing website data or ending a private browsing session may remove local projects. Keep a backup outside the browser. Backup files contain your photos. The app cannot automatically read files in your device's Downloads folder.
 
-<div align="center">
+## Exports and media
 
-<!-- ============================================================================== -->
-<!-- ANIMATED CAPSULE FOOTER                                                        -->
-<!-- ============================================================================== -->
-<img src="./assets/footer.svg" alt="PIMX_MOJI 3D Footer" width="100%" />
+Download PNG, text, animated GIF or silent video. PNG supports avatar/story/wallpaper/poster templates and transparent backgrounds. Camera access starts only after you enable it and requires HTTPS or localhost. Video support depends on your browser.
 
-<sub>Crafted with creativity by <a href="https://github.com/MOHAMMADREZAABEDINPOOR"><b>MOHAMMADREZA ABEDINPOOR</b></a>. If PIMX_MOJI inspires your artistic journey, leave a ⭐!</sub>
+## Checks
 
-</div>
+```sh
+npm run lint
+npm run build
+npm test
+```
+
+See [the Persian studio guide](STUDIO.md) for the interface, backup format and tests. Fonts and sample-photo credits are in `public/fonts` and `public/samples`.
+
+The result page owns motion selection and saves it with the artwork. Its image viewer supports zoom buttons, wheel zoom after focusing the image, dragging, double-click, pinch, keyboard controls and an expanded view inside the site. PNG size choices use an accessible keyboard-operated listbox, and changes to size, margin and signature update the actual still preview. GIF/video preserve the selected motion at the original image ratio.

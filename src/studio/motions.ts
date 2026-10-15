@@ -1,0 +1,21 @@
+export const MOTIONS = [
+  { id: "still", en: "Still", fa: "ثابت" },
+  { id: "reveal", en: "Build up", fa: "ساخته‌شدن" },
+  { id: "rain", en: "Character rain", fa: "بارش حروف" },
+  { id: "wave", en: "Wave", fa: "موج" },
+  { id: "glitch", en: "Glitch", fa: "گلیچ" },
+  { id: "scatter", en: "Scatter", fa: "پراکندگی" },
+  { id: "orbit", en: "Orbit", fa: "مدار" },
+  { id: "ripple", en: "Ripple", fa: "موج دایره‌ای" },
+  { id: "breathe", en: "Breathe", fa: "نفس" },
+  { id: "drift", en: "Float", fa: "شناور" },
+  { id: "scan", en: "Light scan", fa: "اسکن نور" },
+  { id: "sparkle", en: "Shimmer", fa: "درخشش" },
+  { id: "tilt", en: "3D tilt", fa: "چرخش سه‌بعدی" },
+  { id: "vortex", en: "Vortex", fa: "گرداب" },
+  { id: "shutter", en: "Shutter", fa: "شاتر" },
+  { id: "bounce", en: "Bounce", fa: "جهش" },
+  { id: "focus", en: "Focus", fa: "فوکوس" },
+  { id: "chromatic", en: "Color split", fa: "تفکیک رنگ" },
+] as const;
+export type MotionEffect = (typeof MOTIONS)[number]["id"];

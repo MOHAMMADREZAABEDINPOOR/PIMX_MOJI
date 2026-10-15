@@ -469,19 +469,16 @@ const translations: Record<Language, Record<string, string>> = {
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('theme') as Theme;
-      if (saved) return saved;
-      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-        return 'light';
-      }
+      try { const saved = localStorage.getItem('theme'); if (saved === 'dark' || saved === 'light') return saved; } catch {}
     }
     return 'dark';
   });
   
   const [language, setLanguage] = useState<Language>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('language') as Language;
-      if (saved) return saved;
+      const routeLanguage = location.pathname.split('/')[1];
+      if (routeLanguage === 'en' || routeLanguage === 'fa') return routeLanguage;
+      try { const saved = localStorage.getItem('language'); if (saved === 'en' || saved === 'fa') return saved; } catch {}
     }
     return 'en';
   });
@@ -491,7 +488,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
-    localStorage.setItem('theme', theme);
+    try { localStorage.setItem('theme', theme); } catch {}
   }, [theme]);
 
   useEffect(() => {
@@ -499,8 +496,17 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const root = window.document.documentElement;
     root.lang = language;
     root.dir = 'ltr'; // Always keep ltr on html to keep scrollbar on right
-    localStorage.setItem('language', language);
+    try { localStorage.setItem('language', language); } catch {}
   }, [language]);
+
+  useEffect(() => {
+    const syncRouteLanguage = () => {
+      const next = location.pathname.split('/')[1];
+      if (next === 'en' || next === 'fa') setLanguage(next);
+    };
+    window.addEventListener('popstate', syncRouteLanguage);
+    return () => window.removeEventListener('popstate', syncRouteLanguage);
+  }, []);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');

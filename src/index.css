@@ -1,4 +1,12 @@
 @import "tailwindcss";
+@import "./studio/studio.css";
+@import "./studio/fonts.css";
+@import "./studio/redesign.css";
+@import "./studio/workspace.css";
+@import "./studio/classic-studio.css";
+@import "./studio/creation-flow.css";
+@import "./studio/personality.css";
+@import "./studio/refinement.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

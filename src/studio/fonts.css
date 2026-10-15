@@ -1,0 +1,60 @@
+@font-face {
+  font-family: Vazirmatn;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/vazirmatn.woff2") format("woff2");
+}
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter.woff2") format("woff2");
+}
+@font-face {
+  font-family: "DM Serif Display";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/dm-serif-italic.ttf") format("truetype");
+}
+html,
+body {
+  overflow-x: clip;
+  width: 100%;
+}
+.sr-only {
+  left: 0;
+  top: 0;
+}
+.canvas-scroll:not(:fullscreen) .canvas-frame {
+  max-width: none;
+}
+.hero-original-spot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1);
+  opacity: 0.85;
+  pointer-events: none;
+  clip-path: circle(0 at var(--spot-x, 50%) var(--spot-y, 50%));
+  transition: clip-path 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hero-art.has-spot .hero-original-spot {
+  clip-path: circle(62px at var(--spot-x, 50%) var(--spot-y, 50%));
+}
+@media (max-width: 640px) {
+  .site-footer > div {
+    flex-wrap: wrap;
+    row-gap: 14px;
+  }
+}
+.light .feature-1 .feature-specimen {
+  color: #705c9a;
+}
+.light .feature-2 .feature-specimen {
+  color: #9f5e40;
+}

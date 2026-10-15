@@ -3,33 +3,38 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="PIMXMOJI is an advanced bilingual (EN/FA) AI-style text art generator that converts images into Mosaic, ASCII, and Emoji artworks with 152+ creative presets." />
+    <script>
+      try { document.documentElement.classList.add(localStorage.getItem('theme') === 'light' ? 'light' : 'dark'); }
+      catch { document.documentElement.classList.add('dark'); }
+    </script>
+    <meta name="description" content="Turn your photos into ASCII, word portraits and color-matched emoji art. Live camera, video, animated exports and 300 styles. فارسی / English." />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="keywords" content="PIMXMOJI, ASCII art generator, emoji art generator, mosaic art, image to ASCII, image to emoji, Persian art generator, text art" />
     <meta name="author" content="PIMX_MOJI" />
-    <meta name="theme-color" content="#0a0a0f" />
+    <meta name="theme-color" content="#08090e" />
     <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
 
     <link rel="canonical" href="https://pimxmoji.pages.dev/" />
-    <link rel="alternate" hreflang="en" href="https://pimxmoji.pages.dev/" />
-    <link rel="alternate" hreflang="fa" href="https://pimxmoji.pages.dev/" />
-    <link rel="alternate" hreflang="x-default" href="https://pimxmoji.pages.dev/" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="PIMXMOJI" />
-    <meta property="og:title" content="PIMXMOJI | AI Text Art Generator (Mosaic, ASCII, Emoji)" />
-    <meta property="og:description" content="Generate high-quality text-based artworks from images. 152+ presets, bilingual EN/FA support, and instant export." />
+    <meta property="og:title" content="PIMX MOJI — Your Creative Playground" />
+    <meta property="og:description" content="Turn photos into character art with 300 styles, a live editor, camera and animated downloads." />
     <meta property="og:url" content="https://pimxmoji.pages.dev/" />
     <meta property="og:locale" content="en_US" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="PIMXMOJI | AI Text Art Generator" />
-    <meta name="twitter:description" content="Turn photos into Mosaic, ASCII, and Emoji art with 152+ presets." />
+    <meta property="og:image" content="https://pimxmoji.pages.dev/social-card.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="PIMX MOJI — photos become characters, words and emoji" />
+    <meta name="twitter:image" content="https://pimxmoji.pages.dev/social-card.png" />
+    <meta name="twitter:title" content="PIMX MOJI — Your Creative Playground" />
+    <meta name="twitter:description" content="Turn photos and videos into ASCII, word and emoji art. Make something yours." />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
-    <title>PIMXMOJI | AI Text Art Generator (Mosaic, ASCII, Emoji)</title>
+    <link rel="preload" href="/fonts/vazirmatn.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>PIMX MOJI — Your Creative Playground</title>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -39,7 +44,7 @@
         "operatingSystem": "Web",
         "url": "https://pimxmoji.pages.dev/",
         "inLanguage": ["en", "fa"],
-        "description": "Advanced bilingual image-to-text art generator for Mosaic, ASCII, and Emoji styles with 152+ presets.",
+        "description": "Advanced bilingual image-to-text art generator for Mosaic, ASCII, and Emoji styles with 300 presets.",
         "offers": {
           "@type": "Offer",
           "price": "0",
@@ -47,7 +52,8 @@
         },
         "publisher": {
           "@type": "Organization",
-          "name": "PIMXMOJI"
+          "name": "PIMXMOJI",
+          "logo": "https://pimxmoji.pages.dev/logo.svg"
         }
       }
     </script>
