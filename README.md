@@ -1,3 +1,11 @@
+<div align="center">
+
+<img src="assets/readme/hero.gif" width="1200" alt="PIMX MOJI character artwork" />
+
+[English](README.md) | [فارسی](README.fa.md) | [Live website](https://pimxmoji.pages.dev/)
+
+</div>
+
 # PIMX MOJI
 
 A browser-based photo-to-character studio with 300 styles: ASCII, word mosaics and emoji art. Persian/English, dark/light themes, live style previews, brushes, motion and local project storage.
