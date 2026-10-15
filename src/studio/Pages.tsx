@@ -28,6 +28,7 @@ import { validateOptions } from "./storage";
 import { buildArtwork, drawArtwork, loadImage } from "./engine";
 import { canvasBlob, download } from "./export";
 import { BackupPanel } from "./BackupPanel";
+import { ProjectComparison } from "./ProjectComparison";
 type Notify = (message: string, error?: boolean) => void;
 function PageHeading({
   label,
@@ -482,12 +483,14 @@ export function LibraryPage({
       <div className="library-view-picker segmented">
         <button
           className={!showOriginals ? "active" : ""}
+          aria-pressed={!showOriginals}
           onClick={() => setShowOriginals(false)}
         >
-          {t("Artwork", "آثار")}
+          {t("Before & after", "\u0642\u0628\u0644 \u0648 \u0628\u0639\u062f")}
         </button>
         <button
           className={showOriginals ? "active" : ""}
+          aria-pressed={showOriginals}
           onClick={() => setShowOriginals(true)}
         >
           {t("Original photos", "عکس‌های اصلی")}
@@ -532,16 +535,12 @@ export function LibraryPage({
                   className="project-card"
                   key={p.id}
                 >
-                  <button className="project-image" onClick={() => open(p)}>
-                    <img
-                      src={showOriginals ? p.source : p.thumbnail}
-                      alt={p.name}
-                      loading="lazy"
-                    />
-                    <span className="style-arrow">
+                  <div className="project-image">
+                    {showOriginals ? <img src={p.source} alt={p.name} loading="lazy" /> : <ProjectComparison project={p} t={t} />}
+                    <button className="style-arrow" aria-label={`${t("Open project", "\u0628\u0627\u0632\u06a9\u0631\u062f\u0646 \u067e\u0631\u0648\u0698\u0647")}: ${p.name}`} onClick={() => open(p)}>
                       <FolderOpen size={19} />
-                    </span>
-                  </button>
+                    </button>
+                  </div>
                   <div className="project-details">
                     <button onClick={() => open(p)}>
                       <h3>{p.name}</h3>

@@ -28,3 +28,5 @@ The current result brief moves all 18 motion choices from studio to the result p
 
 
 Studio quality refinement: density supports 400 columns in every mode and in portable backups. Still PNG output renders at up to 2x native glyph size, bounded to 8192 pixels per edge and 32 megapixels. The result viewer retains the exported pixels when zooming. Full-quality drawing yields between short batches and reuses its source canvas across framing edits. Hover previews remain bounded, cached and delayed by 100ms to skip pointer flyovers; cards enter and exit with reduced-motion support. Narrow screens show one readable style per row with a separate touch preview control. Persian library navigation uses تاریخچه.
+
+History defaults to an interactive before/after comparison on each project card. Source and artwork share the same fitted frame, with a draggable and keyboard-operated divider, localized labels, and a separate open-project button. The after view reconstructs saved options at their actual density, including old source-only thumbnails. Rendering is lazy, serialized, cached, and chunked; original-photo mode remains available.

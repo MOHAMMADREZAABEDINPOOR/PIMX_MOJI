@@ -122,3 +122,23 @@
 @media (prefers-reduced-motion: reduce) {
   .guided-studio *, .style-hover-card, .tooltip-art canvas { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* A paired view uses the saved settings, including older source-only thumbnails. */
+.project-comparison { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--bg); isolation: isolate; }
+.project-comparison > img, .project-comparison-result, .project-comparison-result canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.project-image .project-comparison img, .project-comparison-result canvas { object-fit: contain; transform: none; }
+.project-comparison-result { background: var(--bg); }
+.project-comparison-label { position: absolute; z-index: 2; top: 12px; padding: 5px 9px; border-radius: 6px; background: #08090ee6; color: #f0f2ff; font-size: 12px; line-height: 1.6; pointer-events: none; }
+.label-before { left: 12px; }
+.label-after { right: 12px; }
+.project-comparison-divider { position: absolute; z-index: 2; top: 0; bottom: 0; width: 2px; background: #f0f2ff; transform: translateX(-50%); pointer-events: none; }
+.project-comparison-divider span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: grid; place-items: center; width: 36px; height: 44px; border-radius: 10px; background: #08090ee6; color: #f0f2ff; font-size: 24px; letter-spacing: 3px; }
+.project-comparison-slider { position: absolute; z-index: 3; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: ew-resize; direction: ltr; touch-action: pan-y; }
+.project-comparison:focus-within { outline: 2px solid var(--accent-text); outline-offset: -3px; }
+.project-image > button.style-arrow { z-index: 4; min-width: 44px; min-height: 44px; display: grid; place-items: center; }
+.project-comparison-status, .project-comparison-error { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.project-comparison-error { display: none; }
+.project-comparison-result canvas[data-preview-state="ready"] ~ span { display: none; }
+.project-comparison-result canvas[data-preview-state="error"] ~ .project-comparison-status { display: none; }
+.project-comparison-result canvas[data-preview-state="error"] ~ .project-comparison-error { display: grid; }
+@media (max-width: 600px) { .library-grid { grid-template-columns: minmax(0, 1fr); } }

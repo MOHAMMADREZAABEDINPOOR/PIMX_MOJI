@@ -534,8 +534,8 @@ function* drawArtworkSteps(
 export function drawArtwork(...args: Parameters<typeof drawArtworkSteps>) {
   for (const _ of drawArtworkSteps(...args)) { /* synchronous small previews */ }
 }
-export async function drawArtworkAsync(canvas: HTMLCanvasElement, art: Artwork, signal?: AbortSignal) {
-  const steps = drawArtworkSteps(canvas, art);
+export async function drawArtworkAsync(canvas: HTMLCanvasElement, art: Artwork, signal?: AbortSignal, maxWidth = 8192) {
+  const steps = drawArtworkSteps(canvas, art, "still", 0, maxWidth);
   try {
     for (const _ of steps) {
       if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");

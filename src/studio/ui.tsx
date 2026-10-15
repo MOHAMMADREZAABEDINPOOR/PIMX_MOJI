@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useSettings } from "../contexts/SettingsContext";
 import { Check, X, LoaderCircle, ArrowUpRight, Sparkles } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
-import { buildArtwork, drawArtwork, loadImage, type Artwork } from "./engine";
+import { buildArtwork, drawArtwork, drawArtworkAsync, loadImage, type Artwork } from "./engine";
 import { DEFAULTS, type StudioOptions, type Effect } from "./types";
 export type Translate = (en: string, fa: string) => string;
 export const spring = { type: "spring" as const, stiffness: 300, damping: 30 };
@@ -163,12 +163,16 @@ export function ArtPreview({
   className = "",
   animated = false,
   effect = "wave",
+  fullDetail = false,
+  label = "Character artwork preview / \u067e\u06cc\u0634\u200c\u0646\u0645\u0627\u06cc\u0634 \u0647\u0646\u0631 \u0645\u062a\u0646\u06cc",
 }: {
   source?: string;
   options?: Partial<StudioOptions>;
   className?: string;
   animated?: boolean;
   effect?: Effect;
+  fullDetail?: boolean;
+  label?: string;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const json = JSON.stringify(options);
@@ -187,7 +191,7 @@ export function ArtPreview({
       previewSources.set(source, ++previewSourceId);
     }
     // Keep large uploaded data URLs out of every individual canvas cache key.
-    const key = `${previewSources.get(source)}:${json}`;
+    const key = `${previewSources.get(source)}:${fullDetail}:${json}`;
     const start = performance.now();
     let last = 0;
     const animate = (now: number) => {
@@ -226,7 +230,7 @@ export function ArtPreview({
         const settings = { ...DEFAULTS, ...JSON.parse(json) };
         settings.resolution = Math.min(
           settings.resolution,
-          settings.mode === "ascii" ? 84 : 52,
+          fullDetail ? 400 : settings.mode === "ascii" ? 84 : 52,
         );
         const art = await buildArtwork(
           image,
@@ -237,7 +241,8 @@ export function ArtPreview({
         );
         if (!alive) return;
         artwork = art;
-        drawArtwork(target, art, "still", 0, 420);
+        await drawArtworkAsync(target, art, controller.signal, 420);
+        if (!alive) return;
         target.dataset.previewState = "ready";
         if (!animated) {
           const copy = document.createElement("canvas");
@@ -277,13 +282,13 @@ export function ArtPreview({
       document.removeEventListener("visibilitychange", refreshAnimation);
       reduced.removeEventListener("change", refreshAnimation);
     };
-  }, [source, json, animated, effect]);
+  }, [source, json, animated, effect, fullDetail]);
   return (
     <canvas
       ref={canvas}
       className={className}
       role="img"
-      aria-label="Character artwork preview / پیش‌نمایش هنر متنی"
+      aria-label={label}
     />
   );
 }
