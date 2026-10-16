@@ -1,14 +1,26 @@
 <div align="center">
 
-<img src="assets/readme/hero.gif" width="1200" alt="PIMX MOJI character artwork" />
+<a href="https://pimxmoji.pages.dev/"><img src="assets/readme/hero.gif" width="1200" alt="PIMX MOJI: animated project artwork" /></a>
 
-[English](README.md) | [فارسی](README.fa.md) | [Live website](https://pimxmoji.pages.dev/)
+[English](README.md) · [فارسی](README.fa.md) · [Live website ↗](https://pimxmoji.pages.dev/)
+
+[![Live GitHub statistics](https://raw.githubusercontent.com/MOHAMMADREZAABEDINPOOR/MOHAMMADREZAABEDINPOOR/main/assets/readme/live-PIMX_MOJI.svg)](https://github.com/MOHAMMADREZAABEDINPOOR/PIMX_MOJI)
 
 </div>
 
 # PIMX MOJI
 
-A browser-based photo-to-character studio with 300 styles: ASCII, word mosaics and emoji art. Persian/English, dark/light themes, live style previews, brushes, motion and local project storage.
+Turn photos into ASCII portraits, word mosaics or emoji art with 300 styles and previews on your own image. Edit with brushes, add motion and export PNG, text, GIF or video; projects and portable backups stay in your browser.
+
+<a href="https://pimxmoji.pages.dev/"><img src="assets/readme/redesign.gif" width="1200" alt="Preview of the redesigned interface: PIMX MOJI" /></a>
+
+[Preview of the redesigned interface · PNG](assets/readme/redesign.png) · [Static artwork](assets/readme/hero.png)
+
+## What you can do
+
+- 300 styles with hover, keyboard and touch previews on your photo
+- Brushes, undo/redo, custom styles and 18 motion effects
+- PNG/text/GIF/video exports; IndexedDB library and portable backup/restore
 
 ## Run
 
@@ -54,3 +66,5 @@ npm test
 See [the Persian studio guide](STUDIO.md) for the interface, backup format and tests. Fonts and sample-photo credits are in `public/fonts` and `public/samples`.
 
 The result page owns motion selection and saves it with the artwork. Its image viewer supports zoom buttons, wheel zoom after focusing the image, dragging, double-click, pinch, keyboard controls and an expanded view inside the site. PNG size choices use an accessible keyboard-operated listbox, and changes to size, margin and signature update the actual still preview. GIF/video preserve the selected motion at the original image ratio.
+
+[GitHub](https://github.com/MOHAMMADREZAABEDINPOOR/PIMX_MOJI) · [PIMX](https://github.com/MOHAMMADREZAABEDINPOOR) · [Portfolio](https://pimx.pages.dev/)
