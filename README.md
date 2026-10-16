@@ -1,6 +1,6 @@
 <div align="center">
 
-<a href="https://pimxmoji.pages.dev/"><img src="assets/readme/hero.gif" width="1200" alt="PIMX MOJI: animated project artwork" /></a>
+<a href="https://pimxmoji.pages.dev/"><img src="assets/readme/hero.gif" width="1200" alt="PIMX MOJI: original animated 3D illustration" /></a>
 
 [English](README.md) · [فارسی](README.fa.md) · [Live website ↗](https://pimxmoji.pages.dev/)
 
@@ -11,10 +11,6 @@
 # PIMX MOJI
 
 Turn photos into ASCII portraits, word mosaics or emoji art with 300 styles and previews on your own image. Edit with brushes, add motion and export PNG, text, GIF or video; projects and portable backups stay in your browser.
-
-<a href="https://pimxmoji.pages.dev/"><img src="assets/readme/redesign.gif" width="1200" alt="Preview of the redesigned interface: PIMX MOJI" /></a>
-
-[Preview of the redesigned interface · PNG](assets/readme/redesign.png) · [Static artwork](assets/readme/hero.png)
 
 ## What you can do
 

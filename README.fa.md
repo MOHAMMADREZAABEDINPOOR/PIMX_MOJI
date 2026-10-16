@@ -1,6 +1,6 @@
 <div align="center">
 
-<a href="https://pimxmoji.pages.dev/"><img src="assets/readme/hero.gif" width="1200" alt="PIMX MOJI: animated project artwork" /></a>
+<a href="https://pimxmoji.pages.dev/"><img src="assets/readme/hero.gif" width="1200" alt="PIMX MOJI: original animated 3D illustration" /></a>
 
 [English](README.md) · [فارسی](README.fa.md) · [Live website ↗](https://pimxmoji.pages.dev/)
 
@@ -11,10 +11,6 @@
 # PIMX MOJI
 
 عکس‌ها را با ۳۰۰ سبک و پیش‌نمایش روی تصویر خودت به پرترهٔ ASCII، موزاییک کلمه یا هنر ایموجی تبدیل کن. با قلم‌مو ویرایش کن، حرکت اضافه کن و خروجی PNG، متن، GIF یا ویدئو بگیر؛ پروژه‌ها و پشتیبان قابل انتقال در مرورگرت می‌مانند.
-
-<a href="https://pimxmoji.pages.dev/"><img src="assets/readme/redesign.gif" width="1200" alt="پیش‌نمایش رابط بازطراحی‌شده: PIMX MOJI" /></a>
-
-[پیش‌نمایش رابط بازطراحی‌شده · PNG](assets/readme/redesign.png) · [Static artwork](assets/readme/hero.png)
 
 ## امکانات
 
